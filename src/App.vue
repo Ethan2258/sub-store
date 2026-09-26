@@ -432,6 +432,12 @@ function checkNeedConfiguration() {
     radial-gradient(ellipse 70% 36% at 100% 0%, rgba(255, 255, 255, 0.28), transparent 52%),
     radial-gradient(ellipse 50% 32% at 78% 110%, rgba(0, 0, 0, 0.05), transparent 50%),
     var(--background-color);
+
+  :root[data-theme="dark"] & {
+    background:
+      radial-gradient(ellipse 80% 36% at 12% -12%, rgba(255, 255, 255, 0.045), transparent 58%),
+      #000000;
+  }
   overflow: hidden;
 
   .page-body {

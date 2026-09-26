@@ -65,6 +65,7 @@ const changeVariables = (newMode: CustomTheme) => {
     modules[newMode].colors['status-bar-background-color']
   );
   document.body.style.backgroundColor = modules[newMode].colors['background-color'] || '';
+  document.documentElement.dataset.theme = modules[newMode].meta.label === 'dark' ? 'dark' : 'light';
 };
 
 export const useThemes = () => {

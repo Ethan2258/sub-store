@@ -36,3 +36,19 @@
 .nut-button.nut-button--primary:active {
   opacity: 0.84;
 }
+
+:root[data-theme="dark"] {
+  .sub-item-wrapper,
+  .nut-cell-group__warp,
+  .nut-collapse-item .collapse-item.collapse-item,
+  .auto-dialog,
+  .tab-panel-wrapper,
+  .nut-popup.nut-popup,
+  .nut-navbar,
+  .tab-bar-wrapper .tabbar,
+  .side-bar-wrapper,
+  .editor-section-tabs {
+    backdrop-filter: blur(20px) saturate(110%);
+    -webkit-backdrop-filter: blur(20px) saturate(110%);
+  }
+}
