@@ -180,8 +180,6 @@ html:root {
     color: #f5f5f7;
   }
 
-  .nut-input,
-  .nut-textarea,
   .nut-searchbar,
   .nut-searchbar__search-input,
   .nut-popover-content,
@@ -240,5 +238,40 @@ html:root {
   .editor-section-tabs {
     backdrop-filter: blur(20px) saturate(110%);
     -webkit-backdrop-filter: blur(20px) saturate(110%);
+  }
+}
+
+// Rows inside a glass group are drawn by the group itself. Giving every row
+// its own rounded background left notches between rows, and full-width
+// dividers ran into the group's stroke; keep dividers inset on both sides
+// and drop the one under the last row so it does not double the border.
+.nut-cell-group__warp .nut-cell {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  &::after {
+    left: 16px !important;
+    right: 16px !important;
+  }
+
+  &:last-child::after,
+  &:not(:has(~ .nut-cell))::after {
+    display: none !important;
+  }
+}
+
+// Inputs sit directly on the glass with an underline, as in the light theme,
+// instead of a second solid box inside the card.
+:root[data-theme="dark"] {
+  .nut-input,
+  .nut-textarea,
+  .nut-textarea__textarea {
+    background: transparent !important;
+    color: #ffffff !important;
+  }
+
+  .nut-searchbar__search-input {
+    border-radius: 10px;
   }
 }
