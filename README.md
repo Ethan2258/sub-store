@@ -1,65 +1,35 @@
-<div align="center">
-<br>
-<img width="200" src="https://raw.githubusercontent.com/cc63/ICON/main/Sub-Store.png" alt="Sub-Store">
-<br>
-<br>
-<h2 align="center">Sub-Store</h2>
-</div>
+# Sub Store
 
-<p align="center" color="#6a737d">
-Advanced Subscription Manager for QX, Loon, Surge, Stash and ShadowRocket.
-</p>
+Sub-Store 前端。在上游界面上改成黑、白、灰，并加上液态玻璃：半透明卡片、顶栏和弹窗，背后有模糊和高光。
 
-[![Build](https://github.com/Peng-YM/Sub-Store/actions/workflows/main.yml/badge.svg)](https://github.com/Peng-YM/Sub-Store/actions/workflows/main.yml) ![GitHub](https://img.shields.io/github/license/Peng-YM/Sub-Store) ![GitHub issues](https://img.shields.io/github/issues/Peng-YM/Sub-Store) ![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/Peng-Ym/Sub-Store) ![Lines of code](https://img.shields.io/tokei/lines/github/Peng-YM/Sub-Store) ![Size](https://img.shields.io/github/languages/code-size/Peng-YM/Sub-Store)
+上游项目：[sub-store-org/Sub-Store-Front-End](https://github.com/sub-store-org/Sub-Store-Front-End)
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/PengYM)
+默认的日间和夜间主题都叫「液态玻璃」。设置里仍可切换上游自带的其他主题。
 
-Core functionalities:
+## 自动更新
 
-[Sub-Store](https://github.com/sub-store-org/Sub-Store)
+- 每天拉取上游 `master` 并合并到本仓库。有冲突时工作流会停下来，需要手动处理。
+- 主题、依赖或版本有改动时自动构建，并发布带 `dist.zip` 的 Release。
 
-### Development
+## 本地开发
 
-#### Guidelines
+需要 Node.js 24 和 pnpm 11。
 
-Commit message follows [@commitlint/config-angular](https://github.com/conventional-changelog/commitlint/tree/master/@commitlint/config-angular)
-
-#### Created in the following version:
-- pnpm v11.0.9 via Corepack
-- Vite v2.9.9
-- Vue v3.2
-- Pinia v2
-- Typescript v4.6
-
-#### Font Awesome Icon 
-This project is using [Font Awesome](https://fontawesome.com/icons/check?s=regular) icons and this is [Documentation](https://fontawesome.com/docs/web/style/size)
-
-#### Start 
 ```bash
-# enable the pinned package manager
 corepack enable
-
-# install dependencies
 pnpm i
-
-# run the server
 pnpm dev
-
-# build the app
 pnpm build
-
-# preview the built app
-pnpm preview
 ```
 
-## LICENSE
+开发服务器默认地址是 http://127.0.0.1:8888/ 。
 
-This project is under the GPL V3 LICENSE.
+## 许可证
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FPeng-YM%2FSub-Store.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FPeng-YM%2FSub-Store?ref=badge_large)
+GPL-3.0。
 
-## Acknowledgements
+## 致谢
 
-- Special thanks to @KOP-XIAO for his awesome resource-parser. Please give
-  a [star](https://github.com/KOP-XIAO/QuantumultX) for his great work!
-- Speicial thanks to @Orz-3 and @58xinian for their awesome icons.
+- [Sub-Store](https://github.com/sub-store-org/Sub-Store) 与前端上游的维护者。
+- @KOP-XIAO 的 resource-parser。
+- @Orz-3 和 @58xinian 的图标。
