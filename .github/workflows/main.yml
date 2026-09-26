@@ -5,16 +5,25 @@ on:
   push:
     branches:
       - master
-    paths:
-      - "package.json"
-      - "src/**"
-      - "index.html"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/main.yml"
+    # Every change to master is released; only files that never reach the
+    # built site are skipped.
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/dependabot.yml"
+      - ".github/workflows/sync-upstream.yml"
+      - ".vscode/**"
+  # Pull requests only build, so a broken change shows up before it is merged.
+  pull_request:
+    branches:
+      - master
 
 concurrency:
-  group: release
-  cancel-in-progress: true
+  group: release-${{ github.event_name == 'pull_request' && github.ref || 'master' }}
+  # Pull requests only need their latest build. Releases queue up instead,
+  # so a quick second push cannot cancel the first one half-way.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: write
@@ -25,6 +34,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -40,23 +51,43 @@ jobs:
         run: pnpm build
 
       - name: Zip
+        if: github.event_name != 'pull_request'
         run: zip -r dist.zip dist
 
       - name: Release tag
+        if: github.event_name != 'pull_request'
         id: tag
         run: |
           version="$(node --eval='process.stdout.write(require("./package.json").version)')"
           echo "release_tag=${version}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      - name: Release notes
+        if: github.event_name != 'pull_request'
+        run: |
+          previous="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+          {
+            echo "Sub-Store 前端 ${{ steps.tag.outputs.version }}"
+            echo
+            echo "默认主题是黑、白、灰的液态玻璃。压缩包里的 \`dist\` 可以直接作为前端静态文件。"
+            echo
+            echo "### 本次改动"
+            echo
+            if [[ -n "$previous" ]]; then
+              git log --no-merges --format='- %s (%h)' "${previous}..HEAD"
+              echo
+              echo "完整对比：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${previous}...${{ steps.tag.outputs.release_tag }}"
+            else
+              git log --no-merges -n 20 --format='- %s (%h)'
+            fi
+          } > release-notes.md
+
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
           name: ${{ steps.tag.outputs.release_tag }}
-          body: |
-            Sub-Store 前端 ${{ steps.tag.outputs.version }}
-
-            默认主题是黑、白、灰的液态玻璃。压缩包里的 `dist` 可以直接作为前端静态文件。
+          body_path: release-notes.md
           files: dist.zip
           make_latest: true
