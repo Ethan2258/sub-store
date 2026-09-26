@@ -8,15 +8,15 @@ export default {
   colors: {
     'primary-color': '#f5f5f7',
     'primary-color-end': '#d1d1d6',
-    'second-color': '#aeaeb2',
-    'third-color': '#8e8e93',
+    'second-color': '#d1d1d6',
+    'third-color': '#f5f5f7',
     'button-text-color': '#000000',
 
     'danger-color': '#d1d1d6',
     'succeed-color': '#f5f5f7',
 
-    'icon-nav-bar-right': '#aeaeb2',
-    'unimportant-icon-color': '#ffffff2e',
+    'icon-nav-bar-right': '#ffffff',
+    'unimportant-icon-color': '#ffffffcc',
 
     'status-bar-background-color': '#000000',
     'background-color': '#000000',
@@ -26,7 +26,7 @@ export default {
     'divider-color': '#ffffff2e',
     'card-color': '#101012f7',
     'dialog-color': '#161618fc',
-    'switch-close-background-color': '#ffffff24',
+    'switch-close-background-color': '#3a3a3c',
     'switch-active-background-color': '#f5f5f7',
     'compare-item-background-color': '#ffffff14',
     'picker-mask-near-color': '#00000066',
@@ -34,8 +34,8 @@ export default {
 
     'primary-text-color': '#ffffff',
     'second-text-color': '#f2f2f7',
-    'comment-text-color': '#d1d1d6',
-    'lowest-text-color': '#aeaeb2',
+    'comment-text-color': '#f5f5f7',
+    'lowest-text-color': '#d1d1d6',
 
     'img-brightness': '100',
     'nav-bar-blur': '28px',
@@ -44,7 +44,7 @@ export default {
     'glass-stroke': '#ffffff47',
     'glass-highlight': '#ffffff1a',
 
-    'compare-tag-text-color': '#aeaeb2',
-    'compare-tag-background-color': '#ffffff18',
+    'compare-tag-text-color': '#ffffff',
+    'compare-tag-background-color': '#3a3a3c',
   },
 };

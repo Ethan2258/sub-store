@@ -63,7 +63,52 @@
 
   .nut-icon-right::before,
   .nut-icon-rect-right::before {
-    color: #d1d1d6;
+    color: #f5f5f7;
+  }
+
+  .nut-input,
+  .nut-textarea,
+  .nut-searchbar,
+  .nut-searchbar__search-input,
+  .nut-popover-content,
+  .nut-pagination-prev,
+  .nut-pagination-item,
+  .nut-pagination-next {
+    background: #1c1c1e !important;
+    color: #ffffff !important;
+  }
+
+  .nut-input .input-text,
+  .nut-textarea__textarea,
+  .nut-popover-menu-item,
+  .nut-form-item__label,
+  .nut-cell__title,
+  .nut-cell__value,
+  .nut-radio__label,
+  .nut-checkbox__label {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff;
+  }
+
+  input::placeholder,
+  textarea::placeholder,
+  .input-text::placeholder,
+  .nut-input__placeholder {
+    color: #d1d1d6 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #d1d1d6;
+  }
+
+  .nut-pagination .active {
+    background: #f5f5f7 !important;
+    color: #1d1d1f !important;
+    -webkit-text-fill-color: #1d1d1f;
+  }
+
+  .navBar-right-button:disabled,
+  .is-disabled,
+  .is-inactive {
+    opacity: 0.72 !important;
   }
 }
 
