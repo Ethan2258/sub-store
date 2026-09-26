@@ -26,7 +26,7 @@ $text-color: $text-color-3;
 $disable-color: $text-color-4;
 
 // input 提示
-$required-color: #fa2c19;
+$required-color: var(--comment-text-color);
 
 // button
 $button-default-border-color: $text-color-4;

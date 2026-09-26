@@ -9,7 +9,7 @@ const mql = window.matchMedia('(prefers-color-scheme: dark)');
 // 通用变量
 const commonVariables = {
   'safe-area-side': '16px',
-  'item-card-radios': '12px',
+  'item-card-radios': '16px',
 };
 
 // 获取主题文件夹内的主题

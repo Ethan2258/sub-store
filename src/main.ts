@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 import 'modern-css-reset/dist/reset.min.css';
 import '@/assets/styles/reduced-motion-fix.scss';
+import '@/assets/styles/liquid-glass.scss';
 import { createPinia } from 'pinia';
 import 'virtual:svg-icons-register';
 import { createApp } from 'vue';

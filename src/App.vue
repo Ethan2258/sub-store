@@ -417,16 +417,21 @@ function checkNeedConfiguration() {
 
 <style lang="scss">
 #app {
-  font-family: "Roboto", "nutui-iconfont", "Noto Sans", Arial, "PingFang SC",
-    "Source Han Sans SC", "Source Han Sans CN", "Microsoft YaHei", "ST Heiti",
-    SimHei, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Source Han Sans SC",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
   display: flex;
   align-items: center;
   flex-direction: column;
   position: absolute;
   min-height: 100%;
   width: 100%;
-  background: var(--background-color);
+  background:
+    radial-gradient(ellipse 90% 42% at 8% -10%, rgba(255, 255, 255, 0.7), transparent 58%),
+    radial-gradient(ellipse 70% 36% at 100% 0%, rgba(255, 255, 255, 0.28), transparent 52%),
+    radial-gradient(ellipse 50% 32% at 78% 110%, rgba(0, 0, 0, 0.05), transparent 50%),
+    var(--background-color);
   overflow: hidden;
 
   .page-body {
