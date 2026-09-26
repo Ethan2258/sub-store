@@ -1,5 +1,10 @@
 name: sync upstream
 
+# Merges sub-store-org/Sub-Store-Front-End master into this fork every day and
+# starts a release when anything new came in. Files this fork owns keep our
+# version. When the merge still conflicts, or it touches workflow files the
+# default token may not push, a pull request from upstream is opened instead
+# and the run fails so the owner gets notified.
 on:
   workflow_dispatch:
   schedule:
@@ -7,30 +12,102 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPOSITORY: sub-store-org/Sub-Store-Front-End
+  # Upstream edits to these are dropped in favour of this fork's version.
+  FORK_OWNED_FILES: >-
+    README.md
+    .github/workflows/main.yml
+    .github/workflows/update-vercel-project-settings.yml
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: master
           fetch-depth: 0
-          persist-credentials: true
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
 
       - name: Merge upstream master
+        id: merge
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add upstream https://github.com/sub-store-org/Sub-Store-Front-End.git
-          git fetch upstream master
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch --no-tags upstream master
+          upstream_sha="$(git rev-parse --short upstream/master)"
           if git merge-base --is-ancestor upstream/master HEAD; then
-            echo "Already up to date."
+            echo "Already contains upstream ${upstream_sha}."
+            echo "result=up-to-date" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if ! git merge upstream/master --no-edit; then
+          git merge --no-commit --no-ff upstream/master || true
+          for file in $FORK_OWNED_FILES; do
+            if git cat-file -e "HEAD:${file}" 2>/dev/null; then
+              git checkout HEAD -- "$file"
+            else
+              git rm --quiet --force --ignore-unmatch -- "$file"
+            fi
+          done
+          conflicts="$(git diff --name-only --diff-filter=U)"
+          if [[ -n "$conflicts" ]]; then
+            {
+              echo "### 上游合并冲突"
+              echo
+              echo "$conflicts" | sed 's/^/- /'
+            } >> "$GITHUB_STEP_SUMMARY"
             git merge --abort
-            echo "Upstream has conflicts with the liquid-glass theme. Merge it by hand."
-            exit 1
+            echo "result=conflict" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          git push origin HEAD:master
+          git commit --no-edit -m "chore: merge upstream ${upstream_sha}"
+          if git push origin HEAD:master; then
+            echo "Merged upstream ${upstream_sha}." >> "$GITHUB_STEP_SUMMARY"
+            echo "result=merged" >> "$GITHUB_OUTPUT"
+          else
+            echo "推送被拒绝（上游修改了工作流文件时需要带 workflow 权限的 SYNC_TOKEN）。" >> "$GITHUB_STEP_SUMMARY"
+            echo "result=push-rejected" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pushes made with the default token do not trigger other workflows, so
+      # the release has to be started explicitly.
+      - name: Start release
+        if: steps.merge.outputs.result == 'merged'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run main.yml --ref master
+
+      - name: Open pull request from upstream
+        if: steps.merge.outputs.result == 'conflict' || steps.merge.outputs.result == 'push-rejected'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          owner="${UPSTREAM_REPOSITORY%%/*}"
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head master --json number,headRepositoryOwner --jq ".[] | select(.headRepositoryOwner.login == \"${owner}\") | .number" | head -n 1)"
+          if [[ -z "$existing" ]]; then
+            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "${owner}:master" \
+              --title "同步上游更新" \
+              --body "自动同步未能直接合并上游 ${UPSTREAM_REPOSITORY} 的 master（${{ steps.merge.outputs.result }}），请在此处理后合并。"
+          fi
+          echo "需要手动处理上游同步，见 Pull Request。" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # GitHub disables scheduled workflows after 60 days without repository
+      # activity, and upstream can stay quiet for months. Re-enabling this
+      # workflow on every run resets that timer so syncing never stops silently.
+      - name: Keep the schedule alive
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/sync-upstream.yml/enable"

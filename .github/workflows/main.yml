@@ -11,9 +11,13 @@ on:
       - "index.html"
       - "pnpm-lock.yaml"
       - ".github/workflows/main.yml"
+  # Pull requests only build, so a broken change shows up before it is merged.
+  pull_request:
+    branches:
+      - master
 
 concurrency:
-  group: release
+  group: release-${{ github.event_name == 'pull_request' && github.ref || 'master' }}
   cancel-in-progress: true
 
 permissions:
@@ -40,9 +44,11 @@ jobs:
         run: pnpm build
 
       - name: Zip
+        if: github.event_name != 'pull_request'
         run: zip -r dist.zip dist
 
       - name: Release tag
+        if: github.event_name != 'pull_request'
         id: tag
         run: |
           version="$(node --eval='process.stdout.write(require("./package.json").version)')"
@@ -50,7 +56,8 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
           name: ${{ steps.tag.outputs.release_tag }}
