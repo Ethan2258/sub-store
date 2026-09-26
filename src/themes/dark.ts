@@ -43,6 +43,8 @@ export default {
     'sticky-title-blur': '28px',
     'glass-stroke': '#ffffff47',
     'glass-highlight': '#ffffff1a',
+    'glass-fill': '#ffffff17',
+    'glass-sheen': '#ffffff12',
 
     'compare-tag-text-color': '#ffffff',
     'compare-tag-background-color': '#3a3a3c',

@@ -34,8 +34,8 @@ export default {
 
     'primary-text-color': '#1d1d1f',
     'second-text-color': '#3a3a3c',
-    'comment-text-color': '#8e8e93',
-    'lowest-text-color': '#aeaeb2',
+    'comment-text-color': '#636366',
+    'lowest-text-color': '#737378',
 
     'img-brightness': '0',
     'nav-bar-blur': '28px',
@@ -43,6 +43,8 @@ export default {
     'sticky-title-blur': '28px',
     'glass-stroke': '#ffffffc7',
     'glass-highlight': '#ffffffeb',
+    'glass-fill': '#ffffff99',
+    'glass-sheen': '#ffffffcc',
 
     'compare-tag-text-color': '#3a3a3c',
     'compare-tag-background-color': '#00000012',

@@ -435,7 +435,9 @@ function checkNeedConfiguration() {
 
   :root[data-theme="dark"] & {
     background:
-      radial-gradient(ellipse 80% 36% at 12% -12%, rgba(255, 255, 255, 0.045), transparent 58%),
+      radial-gradient(ellipse 80% 36% at 12% -12%, rgba(255, 255, 255, 0.08), transparent 58%),
+      radial-gradient(ellipse 60% 30% at 100% 38%, rgba(255, 255, 255, 0.045), transparent 60%),
+      radial-gradient(ellipse 70% 34% at 0% 92%, rgba(255, 255, 255, 0.04), transparent 60%),
       #000000;
   }
   overflow: hidden;
