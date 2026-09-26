@@ -87,6 +87,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
+          # Tag the commit that was built, not whatever master points at when
+          # the release is published.
+          target_commitish: ${{ github.sha }}
           name: ${{ steps.tag.outputs.release_tag }}
           body_path: release-notes.md
           files: dist.zip
