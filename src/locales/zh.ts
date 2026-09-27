@@ -1506,6 +1506,11 @@ export default {
       team: '项目组',
       scriptTutorial: '脚本教程',
       link: 'GitHub',
+      upstream: '上游前端',
+      license: '许可证',
+      noWarranty: '不提供任何担保',
+      licenseText: '条款',
+      source: '源代码',
     },
     changelogs: {
       title: '更新日志',

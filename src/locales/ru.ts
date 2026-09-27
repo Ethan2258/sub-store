@@ -1591,7 +1591,12 @@ export default {
       "module": "Модуль",
       "team": "Команда проекта",
       "scriptTutorial": "Скрипты и мануалы",
-      "link": "GitHub"
+      "link": "GitHub",
+      "upstream": "Исходный фронтенд",
+      "license": "Лицензия",
+      "noWarranty": "без каких-либо гарантий",
+      "licenseText": "Условия",
+      "source": "Исходный код"
     },
     "changelogs": {
       "title": "История изменений"

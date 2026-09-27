@@ -61,6 +61,19 @@ jobs:
       - name: Check translations
         run: pnpm check:locales
 
+      - name: Release tag
+        id: tag
+        run: |
+          version="$(node --eval='process.stdout.write(require("./package.json").version)')"
+          if [[ "${GITHUB_EVENT_NAME}" == pull_request ]]; then
+            build_tag="${version}-pr${{ github.event.pull_request.number }}"
+          else
+            build_tag="${version}-${GITHUB_RUN_NUMBER}"
+          fi
+          echo "release_tag=${build_tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "SUB_STORE_BUILD_TAG=${build_tag}" >> "$GITHUB_ENV"
+
       - name: Build
         run: pnpm build
 
@@ -75,14 +88,6 @@ jobs:
           unzip -p dist.zip dist/LICENSE | grep 'GNU GENERAL PUBLIC LICENSE' > /dev/null
           sha256sum dist.zip > dist.zip.sha256
           sha256sum auth-gateway.zip > auth-gateway.zip.sha256
-
-      - name: Release tag
-        if: github.event_name != 'pull_request'
-        id: tag
-        run: |
-          version="$(node --eval='process.stdout.write(require("./package.json").version)')"
-          echo "release_tag=${version}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Release notes
         if: github.event_name != 'pull_request'

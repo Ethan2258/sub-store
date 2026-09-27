@@ -10,13 +10,27 @@
             <template v-slot:title>
               <span>
                 {{ $t(`aboutUsPage.projectInfo.fe`) }}
-                <b class="bclass">v{{ version }} </b>
+                <b class="bclass">
+                  <a v-if="isReleaseBuild" target="_blank" :href="`${repoUrl}/releases/tag/${buildTag}`">v{{ buildTag }}</a>
+                  <template v-else>v{{ buildTag }}</template>
+                </b>
               </span>
             </template>
             <template v-slot:link>
-              <a target="_blank" href="https://github.com/Ethan2258/sub-store">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
+              <a target="_blank" :href="repoUrl">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
               &nbsp;&nbsp;
-              <a target="_blank" href="https://github.com/Ethan2258/sub-store/releases">{{ $t(`aboutUsPage.changelogs.title`)  }}</a>
+              <a target="_blank" :href="`${repoUrl}/releases`">{{ $t(`aboutUsPage.changelogs.title`)  }}</a>
+            </template>
+          </nut-cell>
+
+          <nut-cell
+            class="cell-item"
+          >
+            <template v-slot:title>
+              <span>{{ $t(`aboutUsPage.projectInfo.upstream`) }}</span>
+            </template>
+            <template v-slot:link>
+              <a target="_blank" :href="upstreamUrl">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
             </template>
           </nut-cell>
 
@@ -59,6 +73,22 @@
               <a target="_blank" href="https://github.com/sub-store-org/Sub-Store/wiki">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
               &nbsp;&nbsp;
               <a target="_blank" href="https://telegram.me/zhetengsha/214">Telegram</a>
+            </template>
+          </nut-cell>
+
+          <nut-cell
+            class="cell-item"
+          >
+            <template v-slot:title>
+              <span>
+                {{ $t(`aboutUsPage.projectInfo.license`) }}
+                <b class="bclass">GPL-3.0 · {{ $t(`aboutUsPage.projectInfo.noWarranty`) }}</b>
+              </span>
+            </template>
+            <template v-slot:link>
+              <a target="_blank" :href="`${repoUrl}/blob/master/LICENSE`">{{ $t(`aboutUsPage.projectInfo.licenseText`) }}</a>
+              &nbsp;&nbsp;
+              <a target="_blank" :href="sourceUrl">{{ $t(`aboutUsPage.projectInfo.source`) }}</a>
             </template>
           </nut-cell>
         </nut-cell-group>
@@ -118,7 +148,15 @@
   // const changelogs = useChangelogs();
   // const active = ref(changelogs[0].date.format('YYYY-MM-DD'));
 
-  const version = import.meta.env.PACKAGE_VERSION
+  // This build is published from Ethan2258/sub-store, a modified version of
+  // sub-store-org/Sub-Store-Front-End (GPL-3.0).
+  const repoUrl = 'https://github.com/Ethan2258/sub-store';
+  const upstreamUrl = 'https://github.com/sub-store-org/Sub-Store-Front-End';
+  const buildTag: string = import.meta.env.BUILD_TAG || import.meta.env.PACKAGE_VERSION;
+  // Release builds are tagged <version>-<run number>; other builds only
+  // know the package version.
+  const isReleaseBuild = /^\d+\.\d+\.\d+-\d+$/.test(buildTag);
+  const sourceUrl = isReleaseBuild ? `${repoUrl}/tree/${buildTag}` : repoUrl;
 </script>
 
 <style lang="scss" scoped>
