@@ -45,6 +45,9 @@ export default {
     'glass-highlight': '#ffffffeb',
     'glass-fill': '#ffffff99',
     'glass-sheen': '#ffffffcc',
+    'sub-progress-fill': '#0000000d',
+    'sub-progress-edge': '#00000026',
+    'sub-progress-opacity': '1',
 
     'compare-tag-text-color': '#3a3a3c',
     'compare-tag-background-color': '#00000012',
