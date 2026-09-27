@@ -1,0 +1,12 @@
+Sub-Store 前端（液态玻璃版）
+https://github.com/Ethan2258/sub-store
+
+本项目是 Sub-Store 前端 https://github.com/sub-store-org/Sub-Store-Front-End
+的修改版，按 GNU 通用公共许可证第 3 版（GPL-3.0）发布，完整条款见 LICENSE。
+
+Copyright (C) Sub-Store 前端的原作者和贡献者
+Copyright (C) 2026 ZHENG YI HENG（本仓库自 2026-09-26 起的修改）
+
+第三方代码保留各自的许可证：
+- src/views/editCode/search、src/views/editCode/lang-js：来自 CodeMirror，MIT，见各自目录下的 LICENSE
+- auth-gateway/public/webauthn-browser.js：@simplewebauthn/browser 13.3.0 的打包版本，MIT
