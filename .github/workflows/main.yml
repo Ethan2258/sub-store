@@ -58,7 +58,9 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           zip -qr dist.zip dist
+          zip -qr auth-gateway.zip auth-gateway -x 'auth-gateway/node_modules/*'
           sha256sum dist.zip > dist.zip.sha256
+          sha256sum auth-gateway.zip > auth-gateway.zip.sha256
 
       - name: Release tag
         if: github.event_name != 'pull_request'
@@ -75,7 +77,7 @@ jobs:
           {
             echo "Sub-Store 前端 ${{ steps.tag.outputs.version }}"
             echo
-            echo "默认主题是黑、白、灰的液态玻璃。压缩包里的 \`dist\` 可以直接作为前端静态文件。"
+            echo "默认主题是黑、白、灰的液态玻璃。压缩包里的 \`dist\` 可以直接作为前端静态文件，\`auth-gateway.zip\` 是配套的登录网关。"
             echo
             echo "### 本次改动"
             echo
@@ -101,4 +103,6 @@ jobs:
           files: |
             dist.zip
             dist.zip.sha256
+            auth-gateway.zip
+            auth-gateway.zip.sha256
           make_latest: true
