@@ -27,6 +27,14 @@ Sub-Store 前端。在上游界面上改成黑、白、灰，并加上液态玻�
 
 ## 部署
 
+在 Linux 服务器上用 root 运行下面这一行即可。已经在跑 Sub-Store（Docker 或 node 进程）时只替换前端，不动数据；没有时会装好 Node.js、后端和前端，并注册成开机自启的 `sub-store` 服务。以后再运行一次就会更新到最新 Release。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ethan2258/sub-store/master/scripts/deploy.sh | bash
+```
+
+也可以手动部署：
+
 需要 Node.js 和 Sub-Store 后端的 `sub-store.bundle.js`。后端可以同时提供前端页面，前后端共用一个端口：
 
 ```bash
