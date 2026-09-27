@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 ZHENG YI HENG
+
 import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';

@@ -77,10 +77,15 @@ pnpm build
 
 ## 许可证
 
-本仓库是 [sub-store-org/Sub-Store-Front-End](https://github.com/sub-store-org/Sub-Store-Front-End) 的修改版，按 [GPL-3.0](LICENSE) 发布。
+本仓库是 [sub-store-org/Sub-Store-Front-End](https://github.com/sub-store-org/Sub-Store-Front-End) 的修改版，按 [GPL-3.0](LICENSE) 发布。版权和第三方许可证汇总在 [NOTICE](NOTICE)。
+
+```
+Copyright (C) Sub-Store 前端的原作者和贡献者
+Copyright (C) 2026 ZHENG YI HENG（本仓库的修改）
+```
 
 - 上游代码的版权归上游作者。本仓库自 2026-09-26 起做的修改（液态玻璃主题、自动发布和同步工作流、部署脚本等）同样按 GPL-3.0 提供，具体改了什么可以在[与上游的对比](https://github.com/sub-store-org/Sub-Store-Front-End/compare/master...Ethan2258:sub-store:master)里看到。
-- 登录网关 `auth-gateway/` 同样按 GPL-3.0 发布。每个 Release 的 `dist.zip` 和 `auth-gateway.zip` 里都附带 `LICENSE`，发布说明里有这一版源代码的链接。
+- 登录网关 `auth-gateway/` 同样按 GPL-3.0 发布。本仓库自己写的文件（主题样式、登录网关、部署脚本、工作流）开头都标了 `SPDX-License-Identifier: GPL-3.0-only`。每个 Release 的 `dist.zip` 和 `auth-gateway.zip` 里都附带 `LICENSE` 和 `NOTICE`，发布说明里有这一版源代码的链接。
 - 第三方代码保留各自的许可证：`src/views/editCode/` 下两处来自 CodeMirror（MIT），`auth-gateway/public/webauthn-browser.js` 是打包好的 [@simplewebauthn/browser](https://github.com/MasterKale/SimpleWebAuthn)（MIT）。
 
 ## 致谢

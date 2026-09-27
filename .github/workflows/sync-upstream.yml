@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 ZHENG YI HENG
+
 name: sync upstream
 
 # Merges sub-store-org/Sub-Store-Front-End master into this fork every day and
@@ -25,6 +28,7 @@ env:
   # including files this fork deleted because it does not use them.
   FORK_OWNED_FILES: >-
     README.md
+    NOTICE
     .editorconfig
     .gitattributes
     .github/workflows/main.yml
