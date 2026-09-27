@@ -17,17 +17,21 @@ Sub-Store 前端。在上游界面上改成黑、白、灰，并加上液态玻�
 ## 自动发布
 
 - `master` 每次有改动都会构建，并发布一个带 `dist.zip` 的新 [Release](../../releases)，说明里列出本次改动。只改文档、许可证、Issue 模板时不发布。
-- 标签格式是 `版本号-运行编号`，例如 `2.34.0-12`。最新一版可以直接用 `releases/latest/download/dist.zip` 下载。
-- PR 只构建、不发布，用来提前发现构建错误。
+- 标签格式是 `版本号-运行编号`，例如 `2.34.0-12`。最新一版可以直接用 `releases/latest/download/dist.zip` 下载，旁边的 `dist.zip.sha256` 是它的 SHA-256 校验和。
+- PR 只检查翻译和构建、不发布，用来提前发现错误。
 
 ## 同步上游
 
-- 每天拉取上游 `master` 并合并到本仓库，合并后自动发布新 Release。上游对 README 和发布工作流的改动会被忽略，保留本仓库的版本。
+- 每天拉取上游 `master` 并合并到本仓库，合并后自动发布新 Release。上游对 README 和发布工作流的改动会被忽略，保留本仓库的版本。上游改了依赖时，会用上游的锁文件重新生成 `pnpm-lock.yaml`，本仓库的依赖覆盖（见下）会自动带上，不会因为锁文件冲突卡住。
 - 其他文件有冲突，或上游改了工作流文件（默认令牌推不了），会开一个「同步上游更新」的 PR 并让工作流失败，需要手动处理。想让后一种情况自动合并，可以加一个带 `workflow` 权限的 `SYNC_TOKEN` 密钥。
+
+## 依赖安全
+
+前端里会发到浏览器的依赖只有 axios 有已知漏洞（上游仍是 0.27），`pnpm-workspace.yaml` 里用 `overrides` 把它升到 0.34，接口不变。`pnpm audit --prod` 剩下的告警都在构建工具或只有命令行才用到的代码里（vite 开发服务器、sass、mocha 等），不会打包进 `dist`。
 
 ## 部署
 
-在 Linux 服务器上用 root 运行下面这一行即可。已经在跑 Sub-Store（Docker 或 node 进程）时只替换前端，不动数据；没有时会装好 Node.js、后端和前端，并注册成开机自启的 `sub-store` 服务。以后再运行一次就会更新到最新 Release。
+在 Linux 服务器上用 root 运行下面这一行即可。已经在跑 Sub-Store（Docker 或 node 进程）时只替换前端，不动数据；没有时会装好 Node.js、后端和前端，并注册成开机自启的 `sub-store` 服务。以后再运行一次就会更新到最新 Release。脚本会核对 `dist.zip` 和 Node.js 安装包的 SHA-256，下载不完整会直接停下。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Ethan2258/sub-store/master/scripts/deploy.sh | bash

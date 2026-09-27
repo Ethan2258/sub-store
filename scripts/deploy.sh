@@ -41,6 +41,10 @@ trap 'rm -rf "$WORK"' EXIT
 
 log "下载最新前端：${DIST_URL}"
 curl -fsSL "$DIST_URL" -o "$WORK/dist.zip"
+# Newer releases publish a checksum next to the zip; older ones are skipped.
+if curl -fsSL "${DIST_URL}.sha256" -o "$WORK/dist.zip.sha256" 2>/dev/null; then
+  (cd "$WORK" && sha256sum -c --quiet dist.zip.sha256) || die "dist.zip 校验失败，下载可能不完整。"
+fi
 unzip -q "$WORK/dist.zip" -d "$WORK"
 [[ -f "$WORK/dist/index.html" ]] || die "dist.zip 里没有 index.html。"
 
@@ -111,10 +115,14 @@ if [[ -z "$NODE" ]] || (( $("$NODE" -p 'process.versions.node.split(".")[0]') < 
     *) die "不支持的架构 $(uname -m)" ;;
   esac
   command -v xz >/dev/null || { log "安装 xz"; install_pkg xz-utils 2>/dev/null || install_pkg xz; }
-  tarball="$(curl -fsSL https://nodejs.org/dist/latest-v24.x/SHASUMS256.txt | awk "/linux-${arch}\\.tar\\.xz\$/ {print \$2}")"
+  sums="$(curl -fsSL https://nodejs.org/dist/latest-v24.x/SHASUMS256.txt)"
+  read -r sum tarball < <(awk "/linux-${arch}\\.tar\\.xz\$/" <<<"$sums") || true
+  [[ -n "${tarball:-}" ]] || die "找不到 Node.js 24 的 linux-${arch} 安装包。"
   log "安装 Node.js：${tarball}"
+  curl -fsSL "https://nodejs.org/dist/latest-v24.x/${tarball}" -o "$WORK/node.tar.xz"
+  echo "${sum}  $WORK/node.tar.xz" | sha256sum -c --quiet - || die "Node.js 下载校验失败。"
   rm -rf "$DIR/node" && mkdir -p "$DIR/node"
-  curl -fsSL "https://nodejs.org/dist/latest-v24.x/${tarball}" | tar -xJ -C "$DIR/node" --strip-components=1
+  tar -xJf "$WORK/node.tar.xz" -C "$DIR/node" --strip-components=1
   NODE="$DIR/node/bin/node"
 fi
 
