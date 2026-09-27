@@ -51,6 +51,12 @@ jobs:
           corepack enable
           pnpm install --frozen-lockfile
 
+      - name: Test login gateway
+        working-directory: auth-gateway
+        run: |
+          npm ci --omit=dev --no-audit --no-fund
+          npm test
+
       - name: Check translations
         run: pnpm check:locales
 
@@ -63,7 +69,7 @@ jobs:
           cp LICENSE NOTICE dist/
           cp LICENSE NOTICE auth-gateway/
           zip -qr dist.zip dist
-          zip -qr auth-gateway.zip auth-gateway -x 'auth-gateway/node_modules/*'
+          zip -qr auth-gateway.zip auth-gateway -x 'auth-gateway/node_modules/*' 'auth-gateway/test/*'
           sha256sum dist.zip > dist.zip.sha256
           sha256sum auth-gateway.zip > auth-gateway.zip.sha256
 

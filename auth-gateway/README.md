@@ -34,4 +34,13 @@ node -e 'const c=require("crypto"),p=process.argv[1],s=c.randomBytes(16);console
 
 nginx 里用 `auth_request` 指向网关的 `/check`，并把 `/_auth/` 反代到网关根路径。
 
-每次发布的 Release 里都有 `auth-gateway.zip`，内容就是这个目录。
+每次发布的 Release 里都有 `auth-gateway.zip`，内容就是这个目录（不含测试）。
+
+## 测试
+
+```bash
+npm ci --omit=dev
+npm test
+```
+
+测试会用临时密码在随机端口上启动网关，检查密码登录、`/check` 会话校验、会话绑定 IP、篡改的 Cookie 会被拒绝，以及连续输错 5 次后锁定。每次构建都会跑，失败就不发布。Dependabot 每月检查一次网关依赖的更新。

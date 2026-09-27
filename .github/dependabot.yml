@@ -13,3 +13,18 @@ updates:
       actions:
         patterns:
           - "*"
+  # The login gateway's server dependencies. @simplewebauthn/browser is
+  # skipped because public/webauthn-browser.js is a bundled copy of it that
+  # has to be rebuilt by hand together with the version bump.
+  - package-ecosystem: npm
+    directory: /auth-gateway
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+    ignore:
+      - dependency-name: "@simplewebauthn/browser"
+    groups:
+      auth-gateway:
+        patterns:
+          - "*"

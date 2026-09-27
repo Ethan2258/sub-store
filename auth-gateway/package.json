@@ -3,6 +3,9 @@
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "dependencies": {
     "@simplewebauthn/browser": "13.3.0",
     "@simplewebauthn/server": "^13.2.2"
