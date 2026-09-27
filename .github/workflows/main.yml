@@ -57,6 +57,7 @@ jobs:
       - name: Zip
         if: github.event_name != 'pull_request'
         run: |
+          cp LICENSE dist/LICENSE
           zip -qr dist.zip dist
           zip -qr auth-gateway.zip auth-gateway -x 'auth-gateway/node_modules/*'
           sha256sum dist.zip > dist.zip.sha256
@@ -88,6 +89,10 @@ jobs:
             else
               git log --no-merges -n 20 --format='- %s (%h)'
             fi
+            echo
+            echo "### 许可证"
+            echo
+            echo "GPL-3.0，基于 [sub-store-org/Sub-Store-Front-End](https://github.com/sub-store-org/Sub-Store-Front-End) 修改。\`dist.zip\` 里附带 \`LICENSE\`，这一版的源代码：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/tree/${{ steps.tag.outputs.release_tag }}"
           } > release-notes.md
 
       - name: Publish release
