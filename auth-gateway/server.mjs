@@ -36,7 +36,9 @@ const PASSWORD_SALT = Buffer.from(requiredEnv('PASSWORD_SALT'), 'base64url');
 const PASSWORD_HASH = Buffer.from(requiredEnv('PASSWORD_HASH'), 'base64url');
 const SESSION_SECRET = Buffer.from(requiredEnv('SESSION_SECRET'), 'base64url');
 
-if (PASSWORD_SALT.length < 16 || PASSWORD_HASH.length !== 32 || SESSION_SECRET.length < 32) throw new Error('Invalid authentication key length');
+// New hashes are 32 bytes; installs from before the gateway was added to this
+// repository used 64-byte hashes; checkPassword derives a key of the stored length.
+if (PASSWORD_SALT.length < 16 || PASSWORD_HASH.length < 32 || PASSWORD_HASH.length > 64 || SESSION_SECRET.length < 32) throw new Error('Invalid authentication key length');
 
 const challenges = new Map();
 const failures = new Map();
