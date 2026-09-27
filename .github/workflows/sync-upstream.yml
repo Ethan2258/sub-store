@@ -39,6 +39,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN || github.token }}
 
+      # Needed to rebuild pnpm-lock.yaml when upstream changes dependencies.
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+
       - name: Merge upstream master
         id: merge
         run: |
@@ -60,6 +66,18 @@ jobs:
               git rm --quiet --force --ignore-unmatch -- "$file"
             fi
           done
+          # This fork overrides some dependency versions (pnpm-workspace.yaml),
+          # so its lockfile differs from upstream's and every upstream
+          # dependency change would conflict. Start from upstream's lockfile
+          # and let pnpm re-apply the overrides instead.
+          unmerged="$(git diff --name-only --diff-filter=U)"
+          if ! grep -qxE 'package\.json|pnpm-workspace\.yaml' <<<"$unmerged" \
+            && ! git diff --cached --quiet HEAD -- package.json pnpm-workspace.yaml pnpm-lock.yaml; then
+            git checkout MERGE_HEAD -- pnpm-lock.yaml
+            corepack enable
+            pnpm install --lockfile-only --ignore-scripts
+            git add pnpm-lock.yaml
+          fi
           conflicts="$(git diff --name-only --diff-filter=U)"
           if [[ -n "$conflicts" ]]; then
             {

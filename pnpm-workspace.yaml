@@ -9,3 +9,8 @@ allowBuilds:
   vue-demi: true
 packages:
   - '.'
+
+overrides:
+  # Upstream still pins axios 0.27, which ships to the browser with known
+  # CSRF token and prototype pollution issues. 0.34 keeps the same API.
+  axios: ^0.34.0
