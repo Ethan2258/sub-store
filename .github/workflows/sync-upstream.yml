@@ -21,13 +21,18 @@ concurrency:
 
 env:
   UPSTREAM_REPOSITORY: sub-store-org/Sub-Store-Front-End
-  # Upstream edits to these are dropped in favour of this fork's version.
+  # Upstream edits to these are dropped in favour of this fork's version,
+  # including files this fork deleted because it does not use them.
   FORK_OWNED_FILES: >-
     README.md
     .editorconfig
     .gitattributes
     .github/workflows/main.yml
     .github/workflows/update-vercel-project-settings.yml
+    .github/ISSUE_TEMPLATE/功能建议.yml
+    .github/ISSUE_TEMPLATE/问题反馈.yml
+    .husky/commit-msg
+    vercel.json
 
 jobs:
   sync:
