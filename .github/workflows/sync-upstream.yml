@@ -41,7 +41,7 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -100,6 +100,22 @@ jobs:
             echo "result=conflict" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          if ! (
+            corepack enable &&
+            pnpm install --frozen-lockfile &&
+            npm ci --prefix auth-gateway --ignore-scripts &&
+            node --check auth-gateway/server.mjs &&
+            pnpm check:gateway &&
+            bash -n scripts/deploy.sh &&
+            bash scripts/check-deploy.sh &&
+            node scripts/check-release.mjs &&
+            pnpm check:locales &&
+            pnpm build
+          ); then
+            git merge --abort
+            echo "result=validation-failed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git commit --no-edit -m "chore: merge upstream ${upstream_sha}"
           if git push origin HEAD:master; then
             echo "Merged upstream ${upstream_sha}." >> "$GITHUB_STEP_SUMMARY"
@@ -115,10 +131,14 @@ jobs:
         if: steps.merge.outputs.result == 'merged'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run main.yml --ref master
+          HAS_SYNC_TOKEN: ${{ secrets.SYNC_TOKEN != '' }}
+        run: |
+          if [[ "$HAS_SYNC_TOKEN" == false ]]; then
+            gh workflow run main.yml --ref master
+          fi
 
       - name: Open pull request from upstream
-        if: steps.merge.outputs.result == 'conflict' || steps.merge.outputs.result == 'push-rejected'
+        if: steps.merge.outputs.result == 'conflict' || steps.merge.outputs.result == 'push-rejected' || steps.merge.outputs.result == 'validation-failed'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

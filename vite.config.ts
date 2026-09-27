@@ -151,20 +151,16 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       chunkSizeWarningLimit: 2048,
       target: "es2015",
       minify: "terser",
-      input: {
-        main: "src/main.ts",
-        SplashScreen: "src/SplashScreen.vue",
-      },
       rollupOptions: {
         output: {
-          entryFileNames: "[name].js",
+          entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: (assetInfo) => {
             const ext = assetInfo.name?.split(".").pop()?.toLowerCase() ?? "";
-            if (/^(png|jpe?g|svg|webp|avif|gif|ico)$/.test(ext)) return "images/[name].[ext]";
-            if (/^(woff2?|ttf|eot|otf)$/.test(ext)) return "fonts/[name].[ext]";
-            if (ext === "css") return "css/[name].[ext]";
-            return "[name].[ext]";
+            if (/^(png|jpe?g|svg|webp|avif|gif|ico)$/.test(ext)) return "images/[name]-[hash].[ext]";
+            if (/^(woff2?|ttf|eot|otf)$/.test(ext)) return "fonts/[name]-[hash].[ext]";
+            if (ext === "css") return "css/[name]-[hash].[ext]";
+            return "[name]-[hash].[ext]";
           },
           manualChunks(id) {
             if (id.includes("node_modules")) {
@@ -188,6 +184,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
     css: {
       preprocessorOptions: {
         scss: {
+          api: "modern-compiler",
           // 配置 自定义覆盖主题 和 nutui 全局 scss 变量
           additionalData: `@import "@/assets/styles/custom_variables.scss";@import "@nutui/nutui/dist/styles/variables-jdt.scss";@import '@/assets/styles/mixins.scss';`,
           // NutUI 3 和 Vite 3 仍依赖 Sass 已弃用的 API。

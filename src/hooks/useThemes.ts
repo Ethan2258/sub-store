@@ -16,7 +16,7 @@ const commonVariables = {
 const getThemeModules = () => {
   const allThemes = {};
   // 读取主题文件内容
-  const modulesFiles = import.meta.globEager('@/themes/*.ts');
+  const modulesFiles = import.meta.glob('@/themes/*.ts', { eager: true });
   const keys = Object.keys(modulesFiles);
 
   // 初始化为主题表，继承合并

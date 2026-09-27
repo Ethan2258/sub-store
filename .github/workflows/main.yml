@@ -12,8 +12,6 @@ on:
     # built site are skipped.
     paths-ignore:
       - "**.md"
-      - "LICENSE"
-      - "NOTICE"
       - ".github/dependabot.yml"
       - ".github/workflows/sync-upstream.yml"
       - ".vscode/**"
@@ -34,7 +32,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -51,6 +49,15 @@ jobs:
           corepack enable
           pnpm install --frozen-lockfile
 
+      - name: Check gateway and deployment
+        run: |
+          npm ci --prefix auth-gateway --ignore-scripts
+          node --check auth-gateway/server.mjs
+          pnpm check:gateway
+          bash -n scripts/deploy.sh
+          bash scripts/check-deploy.sh
+          node scripts/check-release.mjs
+
       - name: Check translations
         run: pnpm check:locales
 
@@ -64,6 +71,8 @@ jobs:
           cp LICENSE NOTICE auth-gateway/
           zip -qr dist.zip dist
           zip -qr auth-gateway.zip auth-gateway -x 'auth-gateway/node_modules/*'
+          unzip -p auth-gateway.zip auth-gateway/public/webauthn-browser.LICENSE.txt | grep 'Permission is hereby granted' > /dev/null
+          unzip -p dist.zip dist/LICENSE | grep 'GNU GENERAL PUBLIC LICENSE' > /dev/null
           sha256sum dist.zip > dist.zip.sha256
           sha256sum auth-gateway.zip > auth-gateway.zip.sha256
 

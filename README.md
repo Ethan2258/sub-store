@@ -20,26 +20,35 @@ Sub-Store 前端。在上游界面上改成黑、白、灰，并加上液态玻�
 
 ## 自动发布
 
-- `master` 每次有改动都会构建，并发布一个带 `dist.zip` 和 `auth-gateway.zip`（登录网关）的新 [Release](../../releases)，说明里列出本次改动。只改文档和许可证时不发布。
+- `master` 每次有改动都会构建，并发布一个带 `dist.zip` 和 `auth-gateway.zip`（登录网关）的新 [Release](../../releases)，说明里列出本次改动。只改 Markdown 文档时不发布；许可证变更会重新发布。
 - 标签格式是 `版本号-运行编号`，例如 `2.34.0-12`。最新一版可以直接用 `releases/latest/download/dist.zip` 下载，旁边的 `.sha256` 文件是对应压缩包的 SHA-256 校验和。
-- PR 只检查翻译和构建、不发布，用来提前发现错误。
+- PR 会检查翻译、前端构建、网关认证回归、部署脚本语法和发布包授权，不发布。
 
 ## 同步上游
 
-- 每天拉取上游 `master` 并合并到本仓库，合并后自动发布新 Release。上游对 README、发布工作流和本仓库删掉的文件（Vercel 配置、Issue 模板、husky 提交钩子）的改动会被忽略，保留本仓库的版本。上游改了依赖时，会用上游的锁文件重新生成 `pnpm-lock.yaml`，本仓库的依赖覆盖（见下）会自动带上，不会因为锁文件冲突卡住。
+- 每天拉取上游 `master`，先完成依赖安装、认证回归、授权检查、翻译检查和构建，再合并到本仓库并自动发布新 Release。验证失败不会推入主分支。上游对 README、发布工作流和本仓库删掉的文件（Vercel 配置、Issue 模板、husky 提交钩子）的改动会被忽略，保留本仓库的版本。上游改了依赖时，会用上游的锁文件重新生成 `pnpm-lock.yaml`，本仓库的依赖覆盖（见下）会自动带上，不会因为锁文件冲突卡住。
 - 其他文件有冲突，或上游改了工作流文件（默认令牌推不了），会开一个「同步上游更新」的 PR 并让工作流失败，需要手动处理。想让后一种情况自动合并，可以加一个带 `workflow` 权限的 `SYNC_TOKEN` 密钥。
 
 ## 依赖安全
 
-前端里会发到浏览器的依赖只有 axios 有已知漏洞（上游仍是 0.27），`pnpm-workspace.yaml` 里用 `overrides` 把它升到 0.34，接口不变。`pnpm audit --prod` 剩下的告警都在构建工具或只有命令行才用到的代码里（vite 开发服务器、sass、mocha 等），不会打包进 `dist`。
+构建工具升级到 Vite 7，开发服务器默认只监听回环地址。构建工具依赖与运行依赖分开；兼容范围内的安全修复通过锁文件和 `pnpm-workspace.yaml` 的定向覆盖保留。Dependabot 每周检查前端及登录网关依赖，自动更新仍需通过 CI 后才能发布。
+
+2026-09-27 的本地检查中，`pnpm audit --prod` 和网关 `npm audit --omit=dev` 均为零告警；完整开发依赖树仍有旧 SVG 工具链等告警，不代表已经消除所有开发工具风险。不要对公网暴露开发服务器。
 
 ## 部署
 
-在 Linux 服务器上用 root 运行下面这一行即可。已经在跑 Sub-Store（Docker 或 node 进程）时只替换前端，不动数据；没有时会装好 Node.js、后端和前端，并注册成开机自启的 `sub-store` 服务。以后再运行一次就会更新到最新 Release。脚本会核对 `dist.zip` 和 Node.js 安装包的 SHA-256，下载不完整会直接停下。
+部署脚本要求 Linux、root，以及已安装的 `curl unzip sha256sum realpath flock`（Debian/Ubuntu 可安装 `curl unzip coreutils util-linux xz-utils`）。新安装需要 systemd。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Ethan2258/sub-store/master/scripts/deploy.sh | bash
 ```
+
+- 下载时先固定 Release 标签，前端校验和缺失或不匹配立即停止；新装后端也验证 GitHub 发布资产的 SHA-256。
+- 已运行的 node 后端只更新独立前端目录，不改数据、后端和服务配置。首次迁移旧的真实目录时有短暂切换窗口；此后通过符号链接原子切换，旧版本保留在同级专用版本目录。
+- Docker 必须挂载独立的前端目录；更新会短暂停止并重新启动容器以重新解析挂载路径。无持久化挂载、多容器不明确的情况会停止，而不是猜测覆盖。
+- 新装服务以非 root 用户运行，仅监听 `127.0.0.1:3001`，不自动开放防火墙。请配置 HTTPS 反向代理；参考 `auth-gateway/nginx.conf.example`。
+- 已有但停止的安装不会被当成新安装覆盖；先恢复原服务。后端随机路径只写入权限为 600 的环境文件，不打印到日志。
+- 不自动删除旧版本。回滚时先停止相关服务，将前端符号链接切回上一个版本，再启动并检查站点。
 
 也可以手动部署：
 
@@ -52,13 +61,14 @@ curl -fLO https://github.com/Ethan2258/sub-store/releases/latest/download/dist.z
 rm -rf dist && unzip -q dist.zip
 
 SUB_STORE_BACKEND_MERGE=true \
+SUB_STORE_BACKEND_API_HOST=127.0.0.1 \
 SUB_STORE_BACKEND_API_PORT=3001 \
 SUB_STORE_FRONTEND_PATH="$PWD/dist" \
 SUB_STORE_FRONTEND_BACKEND_PATH=/换成一串随机路径 \
 node sub-store.bundle.js
 ```
 
-然后打开 `http://<机器地址>:3001/?api=http://<机器地址>:3001/<随机路径>`。更新前端时重新下载 `dist.zip` 并解压覆盖 `dist` 即可，不用重启后端。
+然后通过 HTTPS 反向代理访问，并在前端配置同源后端随机路径。不要向公网开放未加密的后端端口。更新建议使用上面的校验及版本切换脚本。
 
 用 Docker 部署时（如 `xream/sub-store` 镜像），把解压出的 `dist` 挂载到容器里，并把 `SUB_STORE_FRONTEND_PATH` 指向它。
 
@@ -71,6 +81,9 @@ corepack enable
 pnpm i
 pnpm dev
 pnpm build
+npm ci --prefix auth-gateway --ignore-scripts
+pnpm check:gateway
+node scripts/check-release.mjs
 ```
 
 开发服务器默认地址是 http://127.0.0.1:8888/ 。

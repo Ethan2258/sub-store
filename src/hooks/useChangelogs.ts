@@ -7,9 +7,10 @@ type Meta = {
 };
 
 export const useChangelogs = () => {
-  const changelogsMap = import.meta.glob('@/changelogs/*.md', {
+  const changelogsMap = import.meta.glob<string>('@/changelogs/*.md', {
     eager: true,
-    as: 'raw',
+    query: '?raw',
+    import: 'default',
   });
   return Object.values(changelogsMap)
     .map(changelog => {

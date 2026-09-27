@@ -5,6 +5,8 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { promisify } from 'node:util';
+import { isIP } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import {
   generateAuthenticationOptions,
@@ -17,15 +19,24 @@ const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT) || 3102;
 // Public address of the Sub-Store site, e.g. https://sub.example.com
 const ORIGIN = new URL(requiredEnv('ORIGIN')).origin;
+if (!ORIGIN.startsWith('https:') && !['127.0.0.1', 'localhost', '[::1]'].includes(new URL(ORIGIN).hostname)) throw new Error('HTTPS origin required');
 const RP_ID = process.env.RP_ID || new URL(ORIGIN).hostname;
 const COOKIE_SECURE = ORIGIN.startsWith('https:') ? '; Secure' : '';
 const COOKIE = 'substore_admin';
-const YEAR = 365 * 24 * 60 * 60;
+const SESSION_TTL = Number(process.env.SESSION_TTL_SECONDS || 86400);
+if (!Number.isSafeInteger(SESSION_TTL) || SESSION_TTL < 300 || SESSION_TTL > 604800) throw new Error('Invalid SESSION_TTL_SECONDS');
+const TRUST_PROXY = process.env.TRUST_PROXY === 'true';
+const scrypt = promisify(crypto.scrypt);
+const sessions = new Map();
+let activePasswordChecks = 0;
+let globalAttempts = { count: 0, expires: 0 };
 const STATE_FILE = process.env.STATE_FILE || '/var/lib/substore-auth/state.json';
 const BROWSER_BUNDLE = fileURLToPath(new URL('./public/webauthn-browser.js', import.meta.url));
 const PASSWORD_SALT = Buffer.from(requiredEnv('PASSWORD_SALT'), 'base64url');
 const PASSWORD_HASH = Buffer.from(requiredEnv('PASSWORD_HASH'), 'base64url');
 const SESSION_SECRET = Buffer.from(requiredEnv('SESSION_SECRET'), 'base64url');
+
+if (PASSWORD_SALT.length < 16 || PASSWORD_HASH.length !== 32 || SESSION_SECRET.length < 32) throw new Error('Invalid authentication key length');
 
 const challenges = new Map();
 const failures = new Map();
@@ -58,7 +69,10 @@ function saveState() {
 }
 
 function clientIp(req) {
-  return String(req.headers['x-client-ip'] || req.socket.remoteAddress || '').trim();
+  const remote = req.socket.remoteAddress || '';
+  const forwarded = String(req.headers['x-client-ip'] || '').trim();
+  if (TRUST_PROXY && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remote) && isIP(forwarded)) return forwarded;
+  return remote;
 }
 
 function cookies(req) {
@@ -71,17 +85,16 @@ function cookies(req) {
   );
 }
 
-function b64(value) {
-  return Buffer.from(value).toString('base64url');
-}
-
 function sign(value) {
   return crypto.createHmac('sha256', SESSION_SECRET).update(value).digest('base64url');
 }
 
 function createSession(ip) {
-  const payload = b64(JSON.stringify({ ip, exp: Math.floor(Date.now() / 1000) + YEAR, v: state.sessionVersion }));
-  return `${payload}.${sign(payload)}`;
+  const id = crypto.randomBytes(32).toString('base64url');
+  const session = { ip, exp: Math.floor(Date.now() / 1000) + SESSION_TTL, v: state.sessionVersion };
+  if (sessions.size >= 1000) sessions.delete(sessions.keys().next().value);
+  sessions.set(id, session);
+  return `${id}.${sign(id)}`;
 }
 
 function validSession(req) {
@@ -92,7 +105,8 @@ function validSession(req) {
   const expected = sign(payload);
   if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false;
   try {
-    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const data = sessions.get(payload);
+    if (!data) return false;
     return data.ip === clientIp(req) && data.exp > Date.now() / 1000 && data.v === state.sessionVersion;
   } catch {
     return false;
@@ -100,7 +114,7 @@ function validSession(req) {
 }
 
 function sessionCookie(token) {
-  return `${COOKIE}=${token}; Path=/; Max-Age=${YEAR}; HttpOnly${COOKIE_SECURE}; SameSite=Lax`;
+  return `${COOKIE}=${token}; Path=/; Max-Age=${SESSION_TTL}; HttpOnly${COOKIE_SECURE}; SameSite=Lax`;
 }
 
 function clearCookie(name) {
@@ -123,12 +137,14 @@ function redirect(res, location, headers = {}) {
 }
 
 async function readBody(req) {
-  let raw = '';
+  const chunks = [];
+  let bytes = 0;
   for await (const chunk of req) {
-    raw += chunk;
-    if (raw.length > 128 * 1024) throw new Error('Request too large');
+    bytes += chunk.length;
+    if (bytes > 128 * 1024) throw new Error('Request too large');
+    chunks.push(chunk);
   }
-  return raw;
+  return Buffer.concat(chunks).toString('utf8');
 }
 
 async function readJson(req) {
@@ -172,13 +188,33 @@ function recordFailure(ip) {
   entry.count += 1;
   if (entry.count >= 5) entry.blockedUntil = now + 30 * 60 * 1000;
   failures.set(ip, entry);
-  console.warn(`AUTH_FAIL ip=${ip} count=${entry.count} blocked=${entry.blockedUntil > now}`);
+  console.warn(`AUTH_ATTEMPT ip=${ip} count=${entry.count} blocked=${entry.blockedUntil > now}`);
 }
 
-function checkPassword(password) {
-  const candidate = crypto.scryptSync(String(password), PASSWORD_SALT, PASSWORD_HASH.length);
+function reserveAttempt(ip) {
+  const now = Date.now();
+  const rate = rateStatus(ip);
+  if (rate.blocked) return rate;
+  if (globalAttempts.expires <= now) globalAttempts = { count: 0, expires: now + 60000 };
+  if (globalAttempts.count >= 60 || failures.size >= 10000 && !failures.has(ip)) return { blocked: true, retry: 60 };
+  globalAttempts.count++;
+  recordFailure(ip);
+  return { blocked: false, retry: 0 };
+}
+
+async function checkPassword(password) {
+  if (typeof password !== 'string' || Buffer.byteLength(password) > 1024) return false;
+  const candidate = await scrypt(password, PASSWORD_SALT, PASSWORD_HASH.length);
   return crypto.timingSafeEqual(candidate, PASSWORD_HASH);
 }
+
+const cleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of sessions) if (value.exp <= now / 1000) sessions.delete(key);
+  for (const [key, value] of failures) if (Math.max(value.first + 600000, value.blockedUntil) <= now) failures.delete(key);
+  for (const [key, value] of challenges) if (value.expires <= now) challenges.delete(key);
+}, 60000);
+cleanup.unref();
 
 // Challenges are looked up by the value the authenticator signed, so an
 // autofill request and a button press on the same page can both be open.
@@ -476,6 +512,7 @@ document.getElementById('logout').addEventListener('click',async function(){
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, ORIGIN);
+    if (req.method === 'POST' && ((req.headers.origin && req.headers.origin !== ORIGIN) || req.headers['sec-fetch-site'] === 'cross-site')) return json(res, 403, { error: '来源验证失败' });
     if (req.method === 'GET' && url.pathname === '/check') {
       res.writeHead(validSession(req) ? 204 : 401, { 'Cache-Control': 'no-store' });
       return res.end();
@@ -494,13 +531,13 @@ const server = http.createServer(async (req, res) => {
       return fs.createReadStream(BROWSER_BUNDLE).pipe(res);
     }
     if (req.method === 'POST' && url.pathname === '/client-error') {
+      if (!validSession(req)) return json(res, 401, { error: '请先登录' });
       const body = await readJson(req);
-      console.warn(`CLIENT_ERROR ip=${clientIp(req)} flow=${String(body.flow).slice(0,32)} name=${String(body.name).slice(0,64)} message=${String(body.message).slice(0,400)}`);
+      console.warn(JSON.stringify({ event: 'CLIENT_ERROR', flow: String(body.flow).slice(0, 32), name: String(body.name).slice(0, 64) }));
       return json(res, 200, { ok: true });
     }
     if (req.method === 'POST' && url.pathname === '/login') {
       const ip = clientIp(req);
-      const rate = rateStatus(ip);
       const contentType = String(req.headers['content-type'] || '');
       const form = contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data');
       let password = '';
@@ -519,20 +556,26 @@ const server = http.createServer(async (req, res) => {
       }
       const destination = safeReturn(ret);
       const fail = (status, error, extraHeaders) => {
-        if (form) return sendLogin(res, status, { error, returnTo: destination, username });
+        if (form) {
+          for (const [name, value] of Object.entries(extraHeaders || {})) res.setHeader(name, value);
+          return sendLogin(res, status, { error, returnTo: destination, username });
+        }
         return json(res, status, { error }, extraHeaders);
       };
+      if (activePasswordChecks >= 4) return fail(429, '服务器繁忙，请稍后重试', { 'Retry-After': '1' });
+      const rate = reserveAttempt(ip);
       if (rate.blocked) return fail(429, `尝试次数过多，请在 ${Math.ceil(rate.retry / 60)} 分钟后重试`, { 'Retry-After': String(rate.retry) });
-      if (!checkPassword(password)) {
-        recordFailure(ip);
-        return fail(401, '密码错误');
-      }
+      activePasswordChecks++;
+      let verified;
+      try { verified = await checkPassword(password); } finally { activePasswordChecks--; }
+      if (!verified) return fail(401, '密码错误');
       failures.delete(ip);
       console.log(`AUTH_SUCCESS ip=${ip} method=password`);
       if (form) return redirect(res, destination, { 'Set-Cookie': sessionCookie(createSession(ip)) });
       return json(res, 200, { redirect: destination }, { 'Set-Cookie': sessionCookie(createSession(ip)) });
     }
     if (req.method === 'POST' && url.pathname === '/logout') {
+      if (validSession(req)) sessions.delete(cookies(req)[COOKIE].split('.')[0]);
       return json(res, 200, { ok: true }, { 'Set-Cookie': clearCookie(COOKIE) });
     }
     if (req.method === 'POST' && url.pathname === '/passkey/register/options') {
@@ -540,7 +583,7 @@ const server = http.createServer(async (req, res) => {
       const options = await generateRegistrationOptions({
         rpName: 'Sub-Store', rpID: RP_ID, userID: new Uint8Array(Buffer.from('substore-admin')), userName: 'admin', userDisplayName: 'Sub-Store 管理员', attestationType: 'none',
         excludeCredentials: state.credentials.map((c) => ({ id: c.id, transports: c.transports })),
-        authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+        authenticatorSelection: { residentKey: 'preferred', userVerification: 'required' },
       });
       issueChallenge(req, 'register', options.challenge);
       return json(res, 200, options);
@@ -550,13 +593,13 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const expectedChallenge = takeChallenge(req, 'register', body);
       if (!expectedChallenge) return json(res, 400, { error: '验证请求已过期，请重试' });
-      const result = await verifyRegistrationResponse({ response: body, expectedChallenge, expectedOrigin: ORIGIN, expectedRPID: RP_ID, requireUserVerification: false });
+      const result = await verifyRegistrationResponse({ response: body, expectedChallenge, expectedOrigin: ORIGIN, expectedRPID: RP_ID, requireUserVerification: true });
       if (!result.verified || !result.registrationInfo) return json(res, 400, { error: '通行密钥验证失败' });
       const credential = result.registrationInfo.credential;
       state.credentials = state.credentials.filter((c) => c.id !== credential.id);
       state.credentials.push({ id: credential.id, publicKey: Buffer.from(credential.publicKey).toString('base64url'), counter: credential.counter, transports: credential.transports || body.response?.transports || [] });
       saveState();
-      console.log(`PASSKEY_REGISTERED ip=${clientIp(req)} id=${credential.id}`);
+      console.log('PASSKEY_REGISTERED');
       return json(res, 200, { ok: true });
     }
     if (req.method === 'POST' && url.pathname === '/passkey/auth/options') {
@@ -567,7 +610,7 @@ const server = http.createServer(async (req, res) => {
       const autofill = url.searchParams.get('autofill') === '1';
       const options = await generateAuthenticationOptions({
         rpID: RP_ID,
-        userVerification: 'preferred',
+        userVerification: 'required',
         ...(autofill ? {} : { allowCredentials: state.credentials.map((c) => ({ id: c.id, transports: c.transports })) }),
       });
       issueChallenge(req, 'authenticate', options.challenge);
@@ -576,15 +619,17 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/passkey/auth/verify') {
       const ip = clientIp(req);
       const body = await readJson(req);
+      const rate = reserveAttempt(ip);
+      if (rate.blocked) return json(res, 429, { error: '请求过于频繁' }, { 'Retry-After': String(rate.retry) });
       const expectedChallenge = takeChallenge(req, 'authenticate', body.credential);
       if (!expectedChallenge) return json(res, 400, { error: '验证请求已过期，请刷新页面后重试' });
       const stored = state.credentials.find((c) => c.id === body.credential?.id);
-      if (!stored) { recordFailure(ip); return json(res, 401, { error: '未识别的通行密钥' }); }
+      if (!stored) { return json(res, 401, { error: '未识别的通行密钥' }); }
       const result = await verifyAuthenticationResponse({
-        response: body.credential, expectedChallenge, expectedOrigin: ORIGIN, expectedRPID: RP_ID, requireUserVerification: false,
+        response: body.credential, expectedChallenge, expectedOrigin: ORIGIN, expectedRPID: RP_ID, requireUserVerification: true,
         credential: { id: stored.id, publicKey: Buffer.from(stored.publicKey, 'base64url'), counter: stored.counter, transports: stored.transports },
       });
-      if (!result.verified) { recordFailure(ip); return json(res, 401, { error: '通行密钥验证失败' }); }
+      if (!result.verified) { return json(res, 401, { error: '通行密钥验证失败' }); }
       stored.counter = result.authenticationInfo.newCounter;
       saveState(); failures.delete(ip);
       console.log(`AUTH_SUCCESS ip=${ip} method=passkey`);
@@ -592,9 +637,13 @@ const server = http.createServer(async (req, res) => {
     }
     json(res, 404, { error: 'Not found' });
   } catch (error) {
-    console.error(error);
+    console.error('AUTH_REQUEST_ERROR');
     json(res, 400, { error: '请求无效' });
   }
 });
+
+server.requestTimeout = 15000;
+server.headersTimeout = 10000;
+server.maxRequestsPerSocket = 100;
 
 server.listen(PORT, HOST, () => console.log(`Sub-Store auth listening on ${HOST}:${PORT}`));

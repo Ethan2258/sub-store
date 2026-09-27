@@ -493,7 +493,7 @@ type ActiveShareEditorData = ShareEditorData & {
   token: string;
 };
 
-const shareThemeModules = import.meta.globEager("@/themes/*.ts");
+const shareThemeModules = import.meta.glob("@/themes/*.ts", { eager: true });
 const shareThemeLabelMap = Object.keys(shareThemeModules).reduce((map, path) => {
   const key = path.split("/").pop()?.replace(".ts", "");
   if (!key) {

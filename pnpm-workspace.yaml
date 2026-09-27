@@ -14,3 +14,8 @@ overrides:
   # Upstream still pins axios 0.27, which ships to the browser with known
   # CSRF token and prototype pollution issues. 0.34 keeps the same API.
   axios: ^0.34.0
+  'ini@<1.3.6': ^1.3.8
+  'brace-expansion@>=2.0.0 <2.1.7': ^2.1.7
+  'postcss@>=8.0.0 <8.5.28': ^8.5.28
+  'nanoid@>=3.0.0 <3.3.19': ^3.3.19
+  'immutable@>=5.0.0 <5.1.8': ^5.1.8

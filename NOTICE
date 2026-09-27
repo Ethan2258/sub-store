@@ -9,4 +9,4 @@ Copyright (C) 2026 ZHENG YI HENG（本仓库自 2026-09-26 起的修改）
 
 第三方代码保留各自的许可证：
 - src/views/editCode/search、src/views/editCode/lang-js：来自 CodeMirror，MIT，见各自目录下的 LICENSE
-- auth-gateway/public/webauthn-browser.js：@simplewebauthn/browser 13.3.0 的打包版本，MIT
+- auth-gateway/public/webauthn-browser.js：@simplewebauthn/browser 13.3.0 的打包版本，MIT，完整版权及许可文本见 auth-gateway/public/webauthn-browser.LICENSE.txt（登录网关发布包内为 public/webauthn-browser.LICENSE.txt）
