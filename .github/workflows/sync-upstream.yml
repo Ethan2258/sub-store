@@ -3,11 +3,13 @@
 
 name: sync upstream
 
-# Merges sub-store-org/Sub-Store-Front-End master into this fork every day and
-# starts a release when anything new came in. Files this fork owns keep our
-# version. When the merge still conflicts, or it touches workflow files the
-# default token may not push, a pull request from upstream is opened instead
-# and the run fails so the owner gets notified.
+# Merges sub-store-org/Sub-Store-Front-End master into this repository every
+# day and starts a release when anything new came in. Files this repository
+# owns keep our version. When the merge still conflicts or fails validation,
+# upstream master is pushed to the upstream-sync branch and a pull request is
+# opened from it; the run fails so the owner gets notified. (This repository
+# is no longer a GitHub fork, so a pull request cannot come straight from the
+# upstream repository.)
 on:
   workflow_dispatch:
   schedule:
@@ -141,13 +143,25 @@ jobs:
         if: steps.merge.outputs.result == 'conflict' || steps.merge.outputs.result == 'push-rejected' || steps.merge.outputs.result == 'validation-failed'
         env:
           GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.merge.outputs.result }}
         run: |
-          owner="${UPSTREAM_REPOSITORY%%/*}"
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head master --json number,headRepositoryOwner --jq ".[] | select(.headRepositoryOwner.login == \"${owner}\") | .number" | head -n 1)"
+          upstream_sha="$(git rev-parse --short upstream/master)"
+          # The default token cannot push commits that change workflow files,
+          # so this push fails in the same cases as a push-rejected merge.
+          if ! git push --force origin "refs/remotes/upstream/master:refs/heads/upstream-sync"; then
+            {
+              echo "无法推送 upstream-sync 分支（上游 ${upstream_sha} 修改了工作流文件，需要带 workflow 权限的 SYNC_TOKEN）。"
+              echo "手动处理：在本地执行"
+              echo "git fetch https://github.com/${UPSTREAM_REPOSITORY}.git master && git merge FETCH_HEAD"
+              echo "解决冲突后推送到 master。"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head upstream-sync --json number --jq '.[0].number // empty')"
           if [[ -z "$existing" ]]; then
-            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "${owner}:master" \
+            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head upstream-sync \
               --title "同步上游更新" \
-              --body "自动同步未能直接合并上游 ${UPSTREAM_REPOSITORY} 的 master（${{ steps.merge.outputs.result }}），请在此处理后合并。"
+              --body "自动同步未能直接合并上游 ${UPSTREAM_REPOSITORY} 的 master（${RESULT}，${upstream_sha}），请在此处理后合并。"
           fi
           echo "需要手动处理上游同步，见 Pull Request。" >> "$GITHUB_STEP_SUMMARY"
           exit 1
