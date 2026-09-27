@@ -14,10 +14,14 @@ Sub-Store 前端。在上游界面上改成黑、白、灰，并加上液态玻�
 - 暗色背景有几处很淡的光晕，让玻璃的模糊效果看得出来。
 - 亮色和暗色下文字对比度都达到 WCAG AA，没有灰底白字或白底白字。
 
+## 登录网关
+
+`auth-gateway/` 是可选的登录页，风格和前端一致，支持管理密码、通行密钥和 1Password 等密码管理器自动填充。用法见 [auth-gateway/README.md](auth-gateway/README.md)。
+
 ## 自动发布
 
-- `master` 每次有改动都会构建，并发布一个带 `dist.zip` 的新 [Release](../../releases)，说明里列出本次改动。只改文档、许可证、Issue 模板时不发布。
-- 标签格式是 `版本号-运行编号`，例如 `2.34.0-12`。最新一版可以直接用 `releases/latest/download/dist.zip` 下载，旁边的 `dist.zip.sha256` 是它的 SHA-256 校验和。
+- `master` 每次有改动都会构建，并发布一个带 `dist.zip` 和 `auth-gateway.zip`（登录网关）的新 [Release](../../releases)，说明里列出本次改动。只改文档、许可证、Issue 模板时不发布。
+- 标签格式是 `版本号-运行编号`，例如 `2.34.0-12`。最新一版可以直接用 `releases/latest/download/dist.zip` 下载，旁边的 `.sha256` 文件是对应压缩包的 SHA-256 校验和。
 - PR 只检查翻译和构建、不发布，用来提前发现错误。
 
 ## 同步上游

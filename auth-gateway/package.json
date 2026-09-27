@@ -1,0 +1,12 @@
+{
+  "name": "substore-auth-gateway",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@simplewebauthn/browser": "13.3.0",
+    "@simplewebauthn/server": "^13.2.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
