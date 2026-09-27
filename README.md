@@ -77,7 +77,11 @@ pnpm build
 
 ## 许可证
 
-GPL-3.0。
+本仓库是 [sub-store-org/Sub-Store-Front-End](https://github.com/sub-store-org/Sub-Store-Front-End) 的修改版，按 [GPL-3.0](LICENSE) 发布。
+
+- 上游代码的版权归上游作者。本仓库自 2026-09-26 起做的修改（液态玻璃主题、自动发布和同步工作流、部署脚本等）同样按 GPL-3.0 提供，具体改了什么可以在[与上游的对比](https://github.com/sub-store-org/Sub-Store-Front-End/compare/master...Ethan2258:sub-store:master)里看到。
+- 每个 Release 的 `dist.zip` 里附带 `LICENSE`，发布说明里有这一版源代码的链接。
+- `src/views/editCode/` 下有两处代码来自 CodeMirror，保留原来的 MIT 许可证。
 
 ## 致谢
 

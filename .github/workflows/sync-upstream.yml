@@ -24,6 +24,8 @@ env:
   # Upstream edits to these are dropped in favour of this fork's version.
   FORK_OWNED_FILES: >-
     README.md
+    .editorconfig
+    .gitattributes
     .github/workflows/main.yml
     .github/workflows/update-vercel-project-settings.yml
 
