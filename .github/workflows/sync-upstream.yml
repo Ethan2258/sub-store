@@ -18,6 +18,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
   actions: write
 
 concurrency:
@@ -149,12 +150,28 @@ jobs:
           # The default token cannot push commits that change workflow files,
           # so this push fails in the same cases as a push-rejected merge.
           if ! git push --force origin "refs/remotes/upstream/master:refs/heads/upstream-sync"; then
-            {
-              echo "无法推送 upstream-sync 分支（上游 ${upstream_sha} 修改了工作流文件，需要带 workflow 权限的 SYNC_TOKEN）。"
-              echo "手动处理：在本地执行"
-              echo "git fetch https://github.com/${UPSTREAM_REPOSITORY}.git master && git merge FETCH_HEAD"
-              echo "解决冲突后推送到 master。"
-            } >> "$GITHUB_STEP_SUMMARY"
+            body="$(cat <<EOT
+          每日同步无法合并上游 ${UPSTREAM_REPOSITORY} 的 master（${RESULT}，${upstream_sha}），而且上游修改了工作流文件，默认令牌推不了 upstream-sync 分支。
+
+          手动处理：
+
+          \`\`\`bash
+          git fetch https://github.com/${UPSTREAM_REPOSITORY}.git master
+          git merge FETCH_HEAD
+          \`\`\`
+
+          解决冲突后推送到 master，然后关闭这个 Issue。想让这种情况自动处理，可以添加带 workflow 权限的 SYNC_TOKEN 密钥。
+
+          运行记录：${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          EOT
+          )"
+            issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title 同步上游需要手动处理' --json number --jq '.[0].number // empty')"
+            if [[ -n "$issue" ]]; then
+              gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "$body"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "同步上游需要手动处理" --body "$body"
+            fi
+            echo "需要手动合并上游，见 Issue。" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --base master --head upstream-sync --json number --jq '.[0].number // empty')"
