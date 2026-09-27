@@ -8,6 +8,10 @@ import viteCompression from "vite-plugin-compression";
 import { VitePWA } from "vite-plugin-pwa";
 
 const version = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf-8")).version.trim();
+// Release builds get the release tag (e.g. 2.34.0-31) from CI; local builds
+// fall back to the package version.
+const buildTagEnv = (process.env.SUB_STORE_BUILD_TAG || "").trim();
+const buildTag = /^[0-9A-Za-z][0-9A-Za-z.-]{0,63}$/.test(buildTagEnv) ? buildTagEnv : version;
 
 const alias: Record<string, string> = {
   "@": path.resolve(__dirname, "src"),
@@ -197,6 +201,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       __VUE_I18N_LEGACY_API__: false,
       __INTLIFY_PROD_DEVTOOLS__: false,
       "import.meta.env.PACKAGE_VERSION": JSON.stringify(version),
+      "import.meta.env.BUILD_TAG": JSON.stringify(buildTag),
     },
   };
 });

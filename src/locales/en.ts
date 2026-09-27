@@ -1552,6 +1552,11 @@ export default {
       team: "Project Team",
       scriptTutorial: 'Scripts & Tutorials',
       link: "GitHub",
+      upstream: "Upstream Front-End",
+      license: "License",
+      noWarranty: "no warranty",
+      licenseText: "Terms",
+      source: "Source",
     },
     changelogs: {
       title: "Changelogs",
