@@ -14,9 +14,9 @@
               </span>
             </template>
             <template v-slot:link>
-              <a target="_blank" href="https://github.com/sub-store-org/Sub-Store-Front-End">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
+              <a target="_blank" href="https://github.com/Ethan2258/sub-store">{{ $t(`aboutUsPage.projectInfo.link`)  }}</a>
               &nbsp;&nbsp;
-              <a target="_blank" href="https://github.com/sub-store-org/Sub-Store-Front-End/releases">{{ $t(`aboutUsPage.changelogs.title`)  }}</a>
+              <a target="_blank" href="https://github.com/Ethan2258/sub-store/releases">{{ $t(`aboutUsPage.changelogs.title`)  }}</a>
             </template>
           </nut-cell>
 
