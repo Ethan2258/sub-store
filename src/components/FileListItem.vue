@@ -254,11 +254,10 @@
   import { resolveImageFit } from '@/utils/iconFit';
   import { isMobile } from '@/utils/isMobile';
   import { openManagedDeleteDialog } from '@/utils/archive';
-  import FilePreview from '@/views/FilePreview.vue';
   import { Dialog, Toast } from '@nutui/nutui';
   import dayjs from 'dayjs';
   import { storeToRefs } from 'pinia';
-  import { computed, ref, toRaw } from 'vue';
+  import { computed, defineAsyncComponent, ref, toRaw } from 'vue';
   import { copyText } from '@/utils/clipboard';
   import { useI18n } from 'vue-i18n';
   import { useRouter, useRoute } from 'vue-router';
@@ -268,6 +267,9 @@
   import { isMihomoConfigFileType } from "@/utils/fileType";
   import { formatPreviewError } from "@/utils/previewError";
   import { downloadBlobResponse } from '@/utils/download';
+
+  // 预览里带代码编辑器，点开时再加载，首页不必下载它
+  const FilePreview = defineAsyncComponent(() => import('@/views/FilePreview.vue'));
 
   const { t } = useI18n();
   const { env } = useBackend();
