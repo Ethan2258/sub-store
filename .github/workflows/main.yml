@@ -31,6 +31,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -47,12 +48,17 @@ jobs:
           corepack enable
           pnpm install --frozen-lockfile
 
+      - name: Check translations
+        run: pnpm check:locales
+
       - name: Build
         run: pnpm build
 
       - name: Zip
         if: github.event_name != 'pull_request'
-        run: zip -r dist.zip dist
+        run: |
+          zip -qr dist.zip dist
+          sha256sum dist.zip > dist.zip.sha256
 
       - name: Release tag
         if: github.event_name != 'pull_request'
@@ -92,5 +98,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: ${{ steps.tag.outputs.release_tag }}
           body_path: release-notes.md
-          files: dist.zip
+          files: |
+            dist.zip
+            dist.zip.sha256
           make_latest: true
