@@ -275,3 +275,14 @@ html:root {
     border-radius: 10px;
   }
 }
+
+// Remaining-traffic bar behind a subscription card. Upstream paints it in the
+// primary color at half opacity, which in these black and white themes is a
+// solid gray block that hides the card's gray text. Here it is a faint tint
+// with a hairline at its end. Themes without these variables keep the
+// upstream look.
+html:root .sub-item-wrapper > .progress {
+  background: var(--sub-progress-fill, var(--primary-color));
+  opacity: var(--sub-progress-opacity, 0.5);
+  box-shadow: inset -1px 0 0 var(--sub-progress-edge, transparent);
+}
