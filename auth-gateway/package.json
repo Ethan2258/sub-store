@@ -1,6 +1,7 @@
 {
   "name": "substore-auth-gateway",
   "private": true,
+  "license": "GPL-3.0-only",
   "type": "module",
   "dependencies": {
     "@simplewebauthn/browser": "13.3.0",
