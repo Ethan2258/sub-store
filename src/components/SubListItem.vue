@@ -323,7 +323,7 @@
 import { Dialog, Toast } from "@nutui/nutui";
 import dayjs from "dayjs";
 import { storeToRefs } from "pinia";
-import { computed, createVNode, ref, toRaw } from "vue";
+import { computed, createVNode, defineAsyncComponent, ref, toRaw } from "vue";
 import { copyText } from "@/utils/clipboard";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -345,7 +345,9 @@ import { resolveImageFit } from "@/utils/iconFit";
 import { isMobile } from "@/utils/isMobile";
 import { openManagedDeleteDialog } from "@/utils/archive";
 import { downloadBlobResponse } from "@/utils/download";
-import CompareTable from "@/views/CompareTable.vue";
+
+// 对比表里带代码编辑器，点开时再加载，首页不必下载它
+const CompareTable = defineAsyncComponent(() => import("@/views/CompareTable.vue"));
 
 const props = defineProps<{
   type: "sub" | "collection";
