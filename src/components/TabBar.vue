@@ -7,6 +7,7 @@
       class="tabbar"
       size="22px"
     >
+      <TabBarCapsule :active-index="activeTab" />
       <nut-tabbar-item class="tabbar-item" to="/subs" icon="link" />
       <nut-tabbar-item
         v-show="!shouldHideFilesTab"
@@ -40,6 +41,7 @@
 </template>
 
 <script lang="ts" setup>
+  import TabBarCapsule from '@/components/TabBarCapsule.vue';
   import { useWideScreenNarrowMode } from '@/hooks/useWideScreenNarrowMode';
   import { useGlobalStore } from '@/store/global';
   import { useSettingsStore } from '@/store/settings';

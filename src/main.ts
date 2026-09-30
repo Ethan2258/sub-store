@@ -15,11 +15,13 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import 'modern-css-reset/dist/reset.min.css';
 import '@/assets/styles/reduced-motion-fix.scss';
 import '@/assets/styles/liquid-glass.scss';
+import '@/assets/styles/motion.scss';
 import { createPinia } from 'pinia';
 import 'virtual:svg-icons-register';
 import { createApp } from 'vue';
 
 import App from './App.vue';
+import { installMotion } from '@/utils/motion';
 
 export async function initializeApp() {
   try {
@@ -49,6 +51,7 @@ export async function initializeApp() {
   const app = createApp(App);
 
   nutUi(app);
+  installMotion(router, document.getElementById('app') as HTMLElement);
   app.use(router);
   app.use(pinia);
   app.use(i18n);

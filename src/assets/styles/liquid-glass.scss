@@ -85,35 +85,14 @@ html:root {
     inset 0 1px 0 var(--glass-highlight);
 }
 
-// The active tab sits on a glass capsule so it stands out from the others.
+// The active tab sits on a glass capsule (TabBarCapsule.vue) so it stands out
+// from the others. The tabs are positioned so their icons draw above it.
 .tab-bar-wrapper .nut-tabbar-item {
   position: relative;
-
-  &:not(.nut-tabbar-item__icon--unactive)::before {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: 50%;
-    width: 64px;
-    height: 40px;
-    transform: translateX(-50%);
-    border-radius: 999px;
-    background: var(--glass-fill);
-    border: 1px solid var(--glass-stroke);
-    box-shadow:
-      0 4px 14px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 var(--glass-highlight);
-    pointer-events: none;
-  }
 
   > .nut-tabbar-item_icon-box {
     position: relative;
   }
-}
-
-:root[data-theme="light"] .tab-bar-wrapper .nut-tabbar-item:not(.nut-tabbar-item__icon--unactive)::before {
-  background: rgba(0, 0, 0, 0.055);
-  border-color: rgba(255, 255, 255, 0.9);
 }
 
 // Notifications become frosted glass instead of solid blue/green/red bars.
