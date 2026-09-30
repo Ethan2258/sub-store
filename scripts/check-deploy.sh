@@ -29,4 +29,25 @@ if (replace_dir "$DIR/not-a-frontend") 2>/dev/null; then exit 1; fi
 for unsafe in / /etc "$DIR" "$DIR/data" "$SANDBOX"; do
   if (replace_dir "$unsafe") 2>/dev/null; then exit 1; fi
 done
-printf 'Deployment checks passed: directory migration, atomic switch, rollback, protected paths.\n'
+
+# The container frontend path comes from the Sub-Store process when the image
+# sets it on the start command (xream/sub-store), else from the container env.
+env SUB_STORE_FRONTEND_PATH=/opt/app/frontend sleep 30 &
+app_pid=$!
+container_pid="$app_pid"
+container_env=""
+docker() {
+  case "$1" in
+    top) printf 'PID\n%s\n' "$container_pid" ;;
+    exec) [[ -n "$container_env" ]] && printf '%s\n' "$container_env" ;;
+  esac
+}
+[[ "$(container_frontend_path app)" == /opt/app/frontend ]]
+kill "$app_pid"
+wait "$app_pid" 2>/dev/null || true
+container_pid=""
+container_env=/srv/frontend
+[[ "$(container_frontend_path app)" == /srv/frontend ]]
+container_env=""
+[[ -z "$(container_frontend_path app)" ]]
+printf 'Deployment checks passed: directory migration, atomic switch, rollback, protected paths, container frontend path.\n'

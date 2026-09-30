@@ -17,7 +17,7 @@
 curl -fsSL https://raw.githubusercontent.com/Ethan2258/sub-store/master/scripts/deploy.sh | bash
 ```
 
-脚本会校验下载的 SHA-256。已有安装只更新前端，旧版本保留；回滚时停止服务，把前端符号链接指回上一版再启动。Docker 需要把前端目录单独挂载出来。新装的服务只监听 `127.0.0.1:3001`，请自己配 HTTPS 反向代理（参考 `auth-gateway/nginx.conf.example`）。
+脚本会校验下载的 SHA-256。已有安装只更新前端，旧版本保留；回滚时停止服务，把前端符号链接指回上一版再启动。Docker 需要把前端目录单独挂载出来，没挂载时脚本会给出具体步骤。新装的服务只监听 `127.0.0.1:3001`，请自己配 HTTPS 反向代理（参考 `auth-gateway/nginx.conf.example`）。
 
 也可以手动部署，让后端同时提供前端页面：
 
