@@ -232,15 +232,22 @@ export const useGlobalStore = defineStore('globalStore', {
       this.istabBar2 = istabBar2;
     },
     async setHostAPI(hostApi: string, options?: { skipInit?: boolean }) {
+      const hostChanged = this.ishostApi !== hostApi;
       this.ishostApi = hostApi;
       service.defaults.baseURL = hostApi;
+      if (hostChanged) {
+        this.env = {};
+        this.isDockerDeployment = false;
+      }
       if (options?.skipInit) return;
       await initStores(true, true, true);
     },
-    async setEnv(options?: { bypassCache?: boolean; strict?: boolean }) {
+    async setEnv(options?: { bypassCache?: boolean; strict?: boolean; signal?: AbortSignal }) {
       const res = await envApi.getEnv({
         bypassCache: options?.bypassCache === true,
+        signal: options?.signal,
       });
+      if (options?.signal?.aborted) return null;
       const nextEnv = res?.data?.status === 'success' ? res.data.data : null;
 
       if (!nextEnv?.backend) {
@@ -253,9 +260,7 @@ export const useGlobalStore = defineStore('globalStore', {
       this.env = nextEnv;
 
       // 检测是否是Docker部署
-      if (this.env?.meta?.node?.env?.SUB_STORE_DOCKER === 'true') {
-        this.isDockerDeployment = true;
-      }
+      this.isDockerDeployment = this.env?.meta?.node?.env?.SUB_STORE_DOCKER === 'true';
 
       return nextEnv;
     },

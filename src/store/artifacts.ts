@@ -15,9 +15,13 @@ export const useArtifactsStore = defineStore('artifactsStore', {
   },
   getters: {},
   actions: {
-    async fetchArtifactsData() {
-      const { data } = await runFrontendRequestTask(() => artifactsApi.getArtifacts(), 'artifacts.getArtifacts');
-      if (data.status === 'success') {
+    async fetchArtifactsData(signal?: AbortSignal) {
+      const { data } = await runFrontendRequestTask(
+        () => artifactsApi.getArtifacts(signal),
+        'artifacts.getArtifacts',
+        { signal },
+      );
+      if (!signal?.aborted && data.status === 'success') {
         this.artifacts = data.data;
       }
     },

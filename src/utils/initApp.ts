@@ -5,13 +5,20 @@ import { useArtifactsStore } from "@/store/artifacts";
 import { useGlobalStore } from "@/store/global";
 import { useSettingsStore } from "@/store/settings";
 import { useSubsStore } from "@/store/subs";
-// import { Toast } from '@nutui/nutui';
+
+let activeInitialization: AbortController | undefined;
 
 export const initStores = async (
   needNotify: boolean,
   needFetchFlow: boolean,
   needRefreshCache: boolean
 ) => {
+  activeInitialization?.abort();
+  const controller = new AbortController();
+  const { signal } = controller;
+  activeInitialization = controller;
+  const isCurrent = () => activeInitialization === controller && !signal.aborted;
+
   const { showNotify } = useAppNotifyStore();
   const globalStore = useGlobalStore();
   const subsStore = useSubsStore();
@@ -23,77 +30,87 @@ export const initStores = async (
   if (needRefreshCache) {
     showNotify({ title: t("globalNotify.refresh.loading"), type: "primary" });
   }
-  // Toast.loading(t('globalNotify.refresh.loading'), {
-  // cover: true,
-  // id: 'refresh',
-  // });
   globalStore.setLoading(true);
   globalStore.setFetchResult(true);
 
-  // Toast.hide('refresh');
-  // 更新所有数据
   try {
-    localStorage.removeItem("envCache");
-
-    // 尝试获取后端环境信息，这是判断后端连接是否成功的关键
     try {
-      // 设置超时，如果3秒内无法连接，则认为连接失败
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Backend connection timeout'));
-        }, localStorage.getItem('timeout') ? parseInt(localStorage.getItem('timeout') as string, 10) : 3000); // 3秒超时
-      });
+      localStorage.removeItem("envCache");
 
-      // 尝试获取环境信息
-      const envPromise = globalStore.setEnv();
+      const configuredTimeout = Number(localStorage.getItem("timeout"));
+      const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0
+        ? configuredTimeout
+        : 3000;
+      const envController = new AbortController();
+      const abortEnvRequest = () => envController.abort();
+      signal.addEventListener("abort", abortEnvRequest, { once: true });
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-      // 使用Promise.race，哪个先完成就用哪个结果
-      await Promise.race([envPromise, timeoutPromise]);
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            envController.abort();
+            reject(new Error("Backend connection timeout"));
+          }, timeoutMs);
+        });
+        await Promise.race([
+          globalStore.setEnv({ signal: envController.signal }),
+          timeoutPromise,
+        ]);
+      } finally {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
+        signal.removeEventListener("abort", abortEnvRequest);
+      }
 
-      // 检查是否成功获取到后端环境信息
+      if (!isCurrent()) return;
       const hasBackendEnv = Object.keys(globalStore.env).length > 0 && globalStore.env.backend;
       if (!hasBackendEnv) {
-        // 如果没有获取到后端环境信息，说明连接失败
-        console.error('Failed to get backend environment info');
         globalStore.setFetchResult(false);
         isSucceed = false;
-        throw new Error('Failed to get backend environment info');
+        throw new Error("Failed to get backend environment info");
       }
-    } catch (envError) {
-      console.error('Error getting backend environment:', envError);
+
+      await subsStore.fetchSubsData({ signal });
+      if (!isCurrent()) return;
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (!isCurrent()) return;
+      await artifactsStore.fetchArtifactsData(signal);
+      if (!isCurrent()) return;
+      await settingsStore.fetchSettings(signal);
+      if (!isCurrent()) return;
+      await settingsStore.syncLocalAppearanceSetting({ signal });
+      if (!isCurrent()) return;
+
+      if (needRefreshCache) {
+        const { data } = await useEnvApi().refreshCache(signal);
+        if (!isCurrent()) return;
+        if (data.status !== "success") {
+          globalStore.setFetchResult(false);
+          isSucceed = false;
+        }
+      }
+    } catch (error) {
+      if (!isCurrent()) return;
+      console.error("Error initializing stores:", error);
       globalStore.setFetchResult(false);
+      subsStore.subs = [];
+      subsStore.collections = [];
       isSucceed = false;
-      throw envError; // 重新抛出异常，中断后续操作
     }
 
-    // 只有在成功获取环境信息后才继续获取其他数据
-    await subsStore.fetchSubsData();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    await artifactsStore.fetchArtifactsData();
-    await settingsStore.fetchSettings();
-    await settingsStore.syncLocalAppearanceSetting();
-
-    if (needRefreshCache) {
-      const { data } = await useEnvApi().refreshCache();
-      if (data.status !== "success") {
-        globalStore.setFetchResult(false);
-        isSucceed = false;
-      }
+    if (!isCurrent()) return;
+    if (isSucceed && needNotify) {
+      showNotify({ title: t("globalNotify.refresh.succeed"), type: "primary" });
     }
-  } catch (e) {
-    console.error('Error initializing stores:', e);
-    globalStore.setFetchResult(false);
-    subsStore.subs = [];
-    subsStore.collections = [];
-    isSucceed = false;
-  }
+    globalStore.setLoading(false);
 
-  // 发送通知
-  if (isSucceed && needNotify) {
-    showNotify({ title: t("globalNotify.refresh.succeed"), type: "primary" });
+    if (needFetchFlow) {
+      await subsStore.fetchFlows(undefined, { signal });
+    }
+  } finally {
+    if (activeInitialization === controller) {
+      globalStore.setLoading(false);
+      activeInitialization = undefined;
+    }
   }
-
-  globalStore.setLoading(false);
-  // 更新流量
-  if (needFetchFlow) await subsStore.fetchFlows();
 };

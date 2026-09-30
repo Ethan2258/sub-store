@@ -353,9 +353,14 @@ export const useSettingsStore = defineStore("settingsStore", {
       }
       this.hasCachedAppearanceNavigationSetting = true;
     },
-    async fetchSettings() {
+    async fetchSettings(signal?: AbortSignal) {
       const { showNotify } = useAppNotifyStore();
-      const res = await runFrontendRequestTask(() => settingsApi.getSettings(), "settings.getSettings");
+      const res = await runFrontendRequestTask(
+        () => settingsApi.getSettings(signal),
+        "settings.getSettings",
+        { signal },
+      );
+      if (signal?.aborted) return;
       if (res?.data?.status === "success" && res?.data?.data) {
         this.syncPlatform = res.data.data.syncPlatform || "";
         this.gistToken = res.data.data.gistToken || "";
@@ -450,7 +455,9 @@ export const useSettingsStore = defineStore("settingsStore", {
       }
     },
     // 备份本地配置到后端（用于兼容外观设置）
-    async syncLocalAppearanceSetting() {
+    async syncLocalAppearanceSetting(options?: { signal?: AbortSignal }) {
+      const signal = options?.signal;
+      if (signal?.aborted) return;
       const globalStore = useGlobalStore();
       const {
         isSimpleMode,
@@ -500,8 +507,9 @@ export const useSettingsStore = defineStore("settingsStore", {
 
       if (this.hasRemoteAppearanceSetting) {
         if (shouldSyncEditorGroupingMode) {
-          await this.changeAppearanceSetting({ appearanceSetting: { editorGroupingMode } });
+          await this.changeAppearanceSetting({ appearanceSetting: { editorGroupingMode } }, options);
         }
+        if (signal?.aborted) return;
         if (hasLocalLegacyAppearanceSetting && this.hasRemoteAppearanceSetting) {
           this.removeLocalAppearanceSetting();
         }
@@ -511,7 +519,8 @@ export const useSettingsStore = defineStore("settingsStore", {
       // 如果有本地持久化的外观设置且后端还没有外观设置，则将其同步到后端
       await this.changeAppearanceSetting({
         appearanceSetting: hasLocalLegacyAppearanceSetting ? data : { editorGroupingMode },
-      });
+      }, options);
+      if (signal?.aborted) return;
       if (hasLocalLegacyAppearanceSetting && this.hasRemoteAppearanceSetting) {
         this.removeLocalAppearanceSetting();
       }
@@ -547,7 +556,7 @@ export const useSettingsStore = defineStore("settingsStore", {
       }
       Toast.hide("theme__loading");
     },
-    async changeAppearanceSetting(data: SettingsPostData) {
+    async changeAppearanceSetting(data: SettingsPostData, options?: { signal?: AbortSignal }) {
       Toast.loading("保存外观设置中...", { cover: true, id: "theme__loading" });
       const { showNotify } = useAppNotifyStore();
       try {
@@ -567,7 +576,8 @@ export const useSettingsStore = defineStore("settingsStore", {
               ),
             }
           : data;
-        const res = await settingsApi.setSettings(requestData);
+        const res = await settingsApi.setSettings(requestData, options?.signal);
+        if (options?.signal?.aborted) return;
         if (res?.data?.status === "success" && res?.data?.data) {
           const hasAppearanceSettingPatch = hasRemoteAppearanceSetting(requestData.appearanceSetting);
           const responseHasAppearanceSetting = hasRemoteAppearanceSetting(res.data.data.appearanceSetting);

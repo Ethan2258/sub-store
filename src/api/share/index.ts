@@ -23,11 +23,12 @@ export function useShareApi() {
         params: mode ? { type, name, mode } : { type, name },
       });
     },
-    getShares: (type?: string, name?: string): AxiosPromise<MyAxiosRes> => {
+    getShares: (type?: string, name?: string, signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: `/api/tokens`,
         method: "get",
         params: { type, name },
+        signal,
       });
     },
     sortShares: (data: string[]): AxiosPromise<MyAxiosRes> => {

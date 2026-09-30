@@ -9,10 +9,11 @@ export function useFilesApi() {
         method: 'get',
       });
     },
-    getWholeFiles: (): AxiosPromise<MyAxiosRes> => {
+    getWholeFiles: (signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/wholeFiles',
         method: 'get',
+        signal,
       });
     },
     getFile: (name: string): AxiosPromise<MyAxiosRes> => {

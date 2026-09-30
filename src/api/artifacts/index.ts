@@ -3,10 +3,11 @@ import { AxiosPromise } from 'axios';
 
 export function useArtifactsApi() {
   return {
-    getArtifacts: (): AxiosPromise<MyAxiosRes> => {
+    getArtifacts: (signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/artifacts',
         method: 'get',
+        signal,
       });
     },
     getOneArtifact: (name: string): AxiosPromise<MyAxiosRes> => {
