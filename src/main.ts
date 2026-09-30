@@ -4,7 +4,7 @@ import '@/assets/styles/overwritten_css_var.scss';
 // import VConsole from 'vconsole';
 // const vConsole = new VConsole();
 import SvgIcon from '@/components/SvgIcon.vue';
-import i18n from '@/locales';
+import i18n, { loadInitialLocaleMessages } from '@/locales';
 import '@/plugin/awesomeIcon';
 
 import nutUi from '@/plugin/nutui';
@@ -21,7 +21,14 @@ import { createApp } from 'vue';
 
 import App from './App.vue';
 
-export function initializeApp() {
+export async function initializeApp() {
+  try {
+    await loadInitialLocaleMessages();
+  } catch (e) {
+    // Still start the app; untranslated text shows its message keys.
+    console.error('Failed to load language messages', e);
+  }
+
   // 创建一个回调函数来处理变化
   const callback = function(mutationsList, observer) {
     for(let mutation of mutationsList) {

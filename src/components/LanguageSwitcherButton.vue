@@ -49,6 +49,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { loadLocaleMessages } from "@/locales";
 import {
   SUPPORTED_LOCALES,
   normalizeLocale,
@@ -74,10 +75,17 @@ const currentLocale = computed(() => {
   return normalizeLocale(String(locale.value || ""));
 });
 
-const changeLang = (type: SupportedLocale) => {
+const changeLang = async (type: SupportedLocale) => {
+  showLangSwitchPopup.value = false;
+  try {
+    await loadLocaleMessages(type);
+  } catch (e) {
+    // Keep the current language if the new one cannot be downloaded.
+    console.error("Failed to load language messages", e);
+    return;
+  }
   locale.value = type;
   localStorage.setItem("locale", type);
-  showLangSwitchPopup.value = false;
 };
 </script>
 

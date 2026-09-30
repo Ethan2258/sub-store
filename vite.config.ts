@@ -13,10 +13,14 @@ const version = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"),
 const buildTagEnv = (process.env.SUB_STORE_BUILD_TAG || "").trim();
 const buildTag = /^[0-9A-Za-z][0-9A-Za-z.-]{0,63}$/.test(buildTagEnv) ? buildTagEnv : version;
 
-const alias: Record<string, string> = {
-  "@": path.resolve(__dirname, "src"),
-  vue: "vue/dist/vue.esm-bundler.js",
-};
+// No component compiles a template at runtime, so the default runtime-only
+// Vue build is enough and the template compiler stays out of the bundle.
+const alias = [
+  { find: "@", replacement: path.resolve(__dirname, "src") },
+  // The package's module entry is a webpack UMD build with core-js polyfills
+  // bundled in; its ES module source is the same component without them.
+  { find: /^vuedraggable$/, replacement: "vuedraggable/src/vuedraggable.js" },
+];
 
 const htmlPlugin = () => {
   return {
@@ -167,13 +171,19 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
             return "[name]-[hash].[ext]";
           },
           manualChunks(id) {
+            // Rollup's CommonJS interop helper is shared by the first page and
+            // by lazy chunks. Keep it in the vendor chunk, or it can land in a
+            // lazy chunk (e.g. the editor) that the first page then imports.
+            if (id.includes("commonjsHelpers")) return "vue-vendor";
             if (id.includes("node_modules")) {
               if (id.includes("@nutui/nutui") || (id.includes("@nutui") && !id.includes("@nutui/icons"))) return "nutui";
               if (id.includes("/codemirror/") || id.includes("@codemirror/") || id.includes("@lezer/") || id.includes("@replit/codemirror") || id.includes("js-beautify")) return "editor";
               if (id.includes("vue-i18n") || id.includes("@intlify/")) return "i18n";
               if (id.includes("@fortawesome/")) return "icons";
               if (id.includes("@vuepic/vue-datepicker")) return "datepicker";
-              if (id.includes("/vue/") || id.includes("/vue-router/") || id.includes("/pinia/") || id.includes("@vue/") || id.includes("@vueuse/")) return "vue-vendor";
+              // @vueuse/integrations is left out so the QR code library it
+              // pulls in is only downloaded by the pages that show a QR code.
+              if (id.includes("/vue/") || id.includes("/vue-router/") || id.includes("/pinia/") || id.includes("@vue/") || id.includes("@vueuse/core") || id.includes("@vueuse/shared")) return "vue-vendor";
             }
           },
         },
