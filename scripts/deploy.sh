@@ -78,16 +78,37 @@ rollback() {
     log "已回滚前端。"
   fi
 }
+# The frontend path the Sub-Store process in a container actually uses. Images
+# such as xream/sub-store set it on the start command, not as an environment
+# variable, so `docker exec printenv` cannot see it; read the processes first.
+container_frontend_path() {
+  local container="$1" pid value
+  for pid in $(docker top "$container" -eo pid 2>/dev/null | tail -n +2 || true); do
+    value="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | sed -n 's/^SUB_STORE_FRONTEND_PATH=//p' | head -n 1 || true)"
+    if [[ -n "$value" ]]; then
+      printf '%s\n' "$value"
+      return
+    fi
+  done
+  docker exec "$container" printenv SUB_STORE_FRONTEND_PATH 2>/dev/null || true
+}
 
 if command -v docker >/dev/null && docker info >/dev/null 2>&1; then
   containers="$(docker ps --format '{{.Names}} {{.Image}}' | awk 'tolower($0) ~ /sub-?store/ {print $1}')"
   if [[ -n "$containers" ]]; then
     [[ "$(wc -l <<<"$containers")" -eq 1 ]] || die "检测到多个容器，请明确选择前端目录后手动部署。"
     container="$containers"
-    front="$(docker exec "$container" printenv SUB_STORE_FRONTEND_PATH 2>/dev/null || true)"
-    [[ "$front" == /* ]] || die "容器没有明确的前端绝对路径。"
+    front="$(container_frontend_path "$container")"
+    [[ "$front" == /* ]] || die "在容器 $container 里找不到前端目录（SUB_STORE_FRONTEND_PATH），不知道该更新哪里。"
     host_dir="$(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{println .Destination .Source}}{{end}}{{end}}' "$container" | awk -v front="$front" '$1 == front {print $2}')"
-    [[ -n "$host_dir" ]] || die "请先将独立前端目录持久化挂载到容器，再更新；不直接改容器可写层。"
+    if [[ -z "$host_dir" ]]; then
+      die "容器 $container 的前端在容器内的 $front，没有挂载到宿主机。脚本不改容器内部的文件（重建容器就会丢失）。
+先把前端目录挂载出来，只需做一次：
+  1. docker cp $container:$front /root/sub-store-frontend
+  2. 用原来的参数重建容器，加上 -v /root/sub-store-frontend:$front
+     （docker compose 就在 volumes 里加一行 - /root/sub-store-frontend:$front）
+然后重新运行本脚本。"
+    fi
     docker stop "$container" >/dev/null
     trap 'docker start "$container" >/dev/null 2>&1 || true; rm -rf -- "$WORK"' EXIT
     replace_dir "$host_dir"
