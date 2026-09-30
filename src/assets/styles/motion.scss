@@ -1,0 +1,419 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 ZHENG YI HENG
+
+// Motion for the liquid glass look: page transitions, press feedback, popups
+// and notifications. Everything here is switched off by reduced-motion-fix.scss
+// (and pageTransitions.ts) when the system asks for reduced motion.
+//
+// Press feedback uses the `scale` property instead of `transform`, so it adds
+// to transforms an element already has (such as the rotated expand arrow on
+// list cards) instead of replacing them.
+
+:root {
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  // The curve iOS uses for sheets sliding in and out.
+  --motion-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  // Settles with a slight overshoot, like a spring.
+  --motion-ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --motion-ease-spring-soft: cubic-bezier(0.2, 1.1, 0.3, 1);
+  --motion-ease-press: cubic-bezier(0.2, 0, 0, 1);
+}
+
+// ---------------------------------------------------------------------------
+// Press feedback: pressed surfaces sink a little and spring back on release.
+// The short delay keeps a card still when a touch turns into a scroll.
+
+// Only the pressed control itself scales: scaling a container as well would
+// move the control out from under the finger, and the click would be lost.
+
+.sub-item-wrapper {
+  transition: scale 480ms var(--motion-ease-spring);
+
+  &:active:not(:has(button:active)) {
+    scale: 0.985;
+    transition: scale 180ms var(--motion-ease-press) 50ms;
+  }
+
+  button {
+    transition:
+      scale 380ms var(--motion-ease-spring),
+      transform 380ms var(--motion-ease-out);
+
+    &:active {
+      scale: 0.86;
+      transition:
+        scale 120ms var(--motion-ease-press),
+        transform 380ms var(--motion-ease-out);
+    }
+  }
+}
+
+// Doubled so it wins over NutUI's own `transition: opacity` on buttons.
+.nut-button.nut-button {
+  transition:
+    opacity 0.2s,
+    scale 420ms var(--motion-ease-spring);
+
+  &:active {
+    scale: 0.96;
+    transition:
+      opacity 0.2s,
+      scale 120ms var(--motion-ease-press);
+  }
+}
+
+.nav-leading-button,
+.navBar-left-icon,
+.navBar-right-button,
+.language-switch-button {
+  transition: scale 380ms var(--motion-ease-spring);
+
+  &:active {
+    scale: 0.86;
+    transition: scale 120ms var(--motion-ease-press);
+  }
+}
+
+.nut-cell--clickable::before {
+  transition: opacity 260ms ease;
+}
+
+.nut-cell--clickable:active::before {
+  transition-duration: 60ms;
+}
+
+.nut-switch.nut-switch {
+  transition: background-color 260ms ease;
+
+  .switch-button {
+    transition: transform 420ms var(--motion-ease-spring);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tab bar: the glass capsule slides between tabs (TabBarCapsule.vue); the
+// icon that becomes active pops, and a pressed icon sinks.
+
+.tab-bar-wrapper .nut-tabbar-item {
+  transition: color 260ms ease;
+
+  > .nut-tabbar-item_icon-box {
+    transition: scale 420ms var(--motion-ease-spring);
+  }
+
+  &:active > .nut-tabbar-item_icon-box {
+    scale: 0.86;
+    transition-duration: 120ms;
+  }
+
+  &:not(.nut-tabbar-item__icon--unactive) > .nut-tabbar-item_icon-box {
+    animation: motion-tab-icon-pop 560ms var(--motion-ease-spring-soft);
+  }
+}
+
+@keyframes motion-tab-icon-pop {
+  0% {
+    scale: 0.8;
+  }
+
+  45% {
+    scale: 1.12;
+  }
+
+  100% {
+    scale: 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Popups. NutUI sets their duration inline (0.3s) and uses `ease`; sheets use
+// the iOS sheet curve instead, and centered dialogs grow in from slightly
+// smaller rather than only fading. The .nut-popup / .nut-overlay prefix keeps
+// these ahead of NutUI's rules whichever stylesheet loads last.
+
+.nut-popup {
+  &.popup-slide-top-enter-active,
+  &.popup-slide-bottom-enter-active,
+  &.popup-slide-left-enter-active,
+  &.popup-slide-right-enter-active {
+    transition-timing-function: var(--motion-ease-sheet);
+  }
+
+  &.popup-slide-top-leave-active,
+  &.popup-slide-bottom-leave-active,
+  &.popup-slide-left-leave-active,
+  &.popup-slide-right-leave-active {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.9, 0.5);
+  }
+
+  &.popup-slide-center-enter-active,
+  &.popup-slide-center-leave-active {
+    transition-property: opacity, transform;
+  }
+
+  &.popup-slide-center-enter-active {
+    transition-timing-function: var(--motion-ease-spring-soft);
+  }
+
+  &.popup-slide-center-leave-active {
+    transition-timing-function: var(--motion-ease-in);
+  }
+
+  &.popup-center.popup-slide-center-enter-from {
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+
+  &.popup-center.popup-slide-center-leave-to {
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+}
+
+// Dialogs opened with Dialog({...}) are mounted already open, so NutUI's enter
+// transition never runs and they used to appear at once. They animate in on
+// mount instead; closing still uses the leave transition above.
+[id^="dialog-"] {
+  > .nut-popup.popup-center {
+    animation: motion-dialog-in 380ms var(--motion-ease-spring-soft);
+  }
+
+  > .nut-overlay {
+    animation: motion-fade-in 240ms var(--motion-ease-out);
+  }
+}
+
+@keyframes motion-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+@keyframes motion-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.nut-overlay {
+  &.overlay-fade-enter-active {
+    transition-timing-function: var(--motion-ease-out);
+  }
+
+  &.overlay-fade-leave-active {
+    transition-timing-function: var(--motion-ease-in);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Notifications drop in from the top and settle, then lift away.
+
+.Toastify__toast.Toastify__slide-enter--top-center {
+  animation-name: motion-toast-in;
+  animation-duration: 560ms;
+  animation-timing-function: var(--motion-ease-spring-soft);
+}
+
+.Toastify__toast.Toastify__slide-exit--top-center {
+  animation-name: motion-toast-out;
+  animation-duration: 260ms;
+  animation-timing-function: var(--motion-ease-in);
+}
+
+@keyframes motion-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -28px, 0) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes motion-toast-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, -16px, 0) scale(0.96);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page transitions (pageTransitions.ts). The bars are captured on their own
+// so they stay in place while the page between them changes.
+
+html[data-page-transition] {
+  .nav-bar-wrapper {
+    view-transition-name: app-nav-bar;
+  }
+
+  // The wrapper has no height; the fixed bar inside it is what shows.
+  .tab-bar-wrapper > .tabbar {
+    view-transition-name: app-tab-bar;
+  }
+
+  .side-bar-wrapper {
+    view-transition-name: app-side-bar;
+  }
+
+  // What shows between the outgoing and incoming page.
+  &::view-transition {
+    background: var(--background-color);
+  }
+
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    mix-blend-mode: normal;
+  }
+
+  &::view-transition-group(app-nav-bar) {
+    animation-duration: 300ms;
+  }
+
+  // Bars present on both pages show their live state, so the tab capsule is
+  // seen sliding rather than fading between two positions.
+  &::view-transition-old(app-tab-bar):not(:only-child),
+  &::view-transition-old(app-side-bar):not(:only-child) {
+    animation: none;
+    opacity: 0;
+  }
+
+  &::view-transition-new(app-tab-bar):not(:only-child),
+  &::view-transition-new(app-side-bar):not(:only-child) {
+    animation: none;
+  }
+
+  // The tab bar leaves when a page without it opens, and returns on the way back.
+  &::view-transition-old(app-tab-bar):only-child {
+    animation: motion-tab-bar-out 240ms var(--motion-ease-in) both;
+  }
+
+  &::view-transition-new(app-tab-bar):only-child {
+    animation: motion-tab-bar-in 420ms var(--motion-ease-out) both;
+  }
+}
+
+:root[data-theme="dark"][data-page-transition]::view-transition {
+  background: #000;
+}
+
+// Switching tabs: the old page fades out, the new one rises in.
+html[data-page-transition="fade"] {
+  &::view-transition-old(root) {
+    animation: motion-page-fade-out 140ms var(--motion-ease-in) both;
+  }
+
+  &::view-transition-new(root) {
+    animation: motion-page-fade-in 320ms var(--motion-ease-out) 70ms both;
+  }
+}
+
+// Opening a page: it slides in from the right over the old one moving left.
+html[data-page-transition="forward"] {
+  &::view-transition-old(root) {
+    animation: motion-page-out-to-left 200ms var(--motion-ease-in) both;
+  }
+
+  &::view-transition-new(root) {
+    animation: motion-page-in-from-right 400ms var(--motion-ease-out) 40ms both;
+  }
+}
+
+// Going back: the reverse.
+html[data-page-transition="back"] {
+  &::view-transition-old(root) {
+    animation: motion-page-out-to-right 200ms var(--motion-ease-in) both;
+  }
+
+  &::view-transition-new(root) {
+    animation: motion-page-in-from-left 400ms var(--motion-ease-out) 40ms both;
+  }
+}
+
+@keyframes motion-page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes motion-page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+
+@keyframes motion-page-out-to-left {
+  to {
+    opacity: 0;
+    transform: translateX(-8%);
+  }
+}
+
+@keyframes motion-page-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(14%);
+  }
+}
+
+@keyframes motion-page-out-to-right {
+  to {
+    opacity: 0;
+    transform: translateX(14%);
+  }
+}
+
+@keyframes motion-page-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8%);
+  }
+}
+
+@keyframes motion-tab-bar-out {
+  to {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@keyframes motion-tab-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reduced motion: reduced-motion-fix.scss stops transitions and animations
+// but keeps notifications animating so they do not flash; let them fade in
+// place instead of moving.
+
+@media (prefers-reduced-motion: reduce) {
+  .Toastify__toast.Toastify__slide-enter--top-center {
+    animation-name: motion-toast-fade-in;
+  }
+
+  .Toastify__toast.Toastify__slide-exit--top-center {
+    animation-name: motion-toast-fade-out;
+  }
+}
+
+@keyframes motion-toast-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes motion-toast-fade-out {
+  to {
+    opacity: 0;
+  }
+}
