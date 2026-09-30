@@ -3,6 +3,7 @@ import { useEnvApi } from '@/api/env';
 import { initStores } from '@/utils/initApp';
 import service from '@/api';
 import { getHostAPIUrl } from '@/hooks/useHostAPI';
+import { readLocalStorageJson } from '@/utils/localStorage';
 
 const envApi = useEnvApi();
 
@@ -119,9 +120,10 @@ export const useGlobalStore = defineStore('globalStore', {
             "https://raw.githubusercontent.com/xream/unofficial-thesvg-iconset/refs/heads/release/gcp.json",
         }
       ],
-      customIconCollections: localStorage.getItem("customIconCollections")
-        ? JSON.parse(localStorage.getItem("customIconCollections"))
-        : [],
+      customIconCollections: readLocalStorageJson(
+        'customIconCollections',
+        Array.isArray,
+      ) || [],
     };
   },
   getters: {},

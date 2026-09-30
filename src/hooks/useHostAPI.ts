@@ -4,6 +4,7 @@ import { useAppNotifyStore } from '@/store/appNotify';
 import service from '@/api';
 import axios from 'axios';
 import { initStores } from '@/utils/initApp';
+import { readLocalStorageJson } from '@/utils/localStorage';
 import { isValidShareBaseUrl, normalizeShareBaseUrl } from '@/utils/share';
 
 const lsKey = 'hostAPI';
@@ -11,6 +12,22 @@ const defaultAPI = import.meta.env.VITE_API_URL || 'https://sub.store';
 
 const normalizeHostApiUrl = (url: string) => {
   return url.replace(/\/$/, '');
+};
+
+const isHostAPI = (value: unknown): value is HostAPI => {
+  if (!value || typeof value !== 'object') return false;
+
+  const api = value as Partial<HostAPI>;
+  return typeof api.name === 'string' && typeof api.url === 'string';
+};
+
+const isHostAPIStorage = (value: unknown): value is HostAPIStorage => {
+  if (!value || typeof value !== 'object') return false;
+
+  const storage = value as Partial<HostAPIStorage>;
+  return typeof storage.current === 'string'
+    && Array.isArray(storage.apis)
+    && storage.apis.every(isHostAPI);
 };
 
 const normalizeHostAPIItem = (api: HostAPI): HostAPI => {
@@ -28,23 +45,18 @@ const normalizeHostAPIItem = (api: HostAPI): HostAPI => {
 };
 
 const getHostAPI = (): HostAPIStorage => {
-  const item = localStorage.getItem(lsKey);
-  if (item) {
-    const parsed = JSON.parse(item) as HostAPIStorage;
+  const parsed = readLocalStorageJson(lsKey, isHostAPIStorage);
+  if (parsed) {
     const normalized = {
       current: parsed.current || '',
-      apis: Array.isArray(parsed.apis)
-        ? parsed.apis.map(normalizeHostAPIItem)
-        : [],
+      apis: parsed.apis.map(normalizeHostAPIItem),
     };
     return normalized;
-  } else {
-    setHostAPI({
-      current: '',
-      apis: [],
-    });
-    return getHostAPI();
   }
+
+  const fallback = { current: '', apis: [] };
+  setHostAPI(fallback);
+  return fallback;
 };
 export const getHostAPIUrl = (): string => {
   const { current, apis } = getHostAPI();
