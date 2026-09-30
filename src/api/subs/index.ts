@@ -3,16 +3,18 @@ import { AxiosPromise } from 'axios';
 
 export function useSubsApi() {
   return {
-    getSubs: (): AxiosPromise<MyAxiosRes> => {
+    getSubs: (signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/subs',
         method: 'get',
+        signal,
       });
     },
-    getCollections: (): AxiosPromise<MyAxiosRes> => {
+    getCollections: (signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: `/api/collections`,
         method: 'get',
+        signal,
       });
     },
     getOne: (type: string, name: string): AxiosPromise<MyAxiosRes> => {

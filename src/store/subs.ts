@@ -64,6 +64,7 @@ type FetchFlowsOptions = {
   cancelPrevious?: boolean;
   missingOnly?: boolean;
   priority?: number;
+  signal?: AbortSignal;
 };
 
 const normalizeShare = (share: Share): Share => {
@@ -278,11 +279,14 @@ export const useSubsStore = defineStore('subsStore', {
         shares.find(share => share.token === token),
   },
   actions: {
-    async fetchSubsData() {
+    async fetchSubsData(options: { signal?: AbortSignal } = {}) {
+      const { signal } = options;
+      const requestOptions = { signal };
+
       await Promise.allSettled([
         runFrontendRequestTask(async () => {
-          const res = await subsApi.getSubs();
-          if ('data' in res.data) {
+          const res = await subsApi.getSubs(signal);
+          if (!signal?.aborted && 'data' in res.data) {
             this.subs = res.data.data.map(i => {
               if (!Array.isArray(i.tag)) {
                 i.tag = []
@@ -290,10 +294,10 @@ export const useSubsStore = defineStore('subsStore', {
               return i
             });
           }
-        }, 'subs.getSubs'),
+        }, 'subs.getSubs', requestOptions),
         runFrontendRequestTask(async () => {
-          const res = await subsApi.getCollections();
-          if ('data' in res.data) {
+          const res = await subsApi.getCollections(signal);
+          if (!signal?.aborted && 'data' in res.data) {
             this.collections = res.data.data.map(i => {
               if (!Array.isArray(i.tag)) {
                 i.tag = []
@@ -301,19 +305,19 @@ export const useSubsStore = defineStore('subsStore', {
               return i
             });
           }
-        }, 'subs.getCollections'),
+        }, 'subs.getCollections', requestOptions),
         runFrontendRequestTask(async () => {
-          const res = await filesApi.getWholeFiles();
-          if ('data' in res.data) {
+          const res = await filesApi.getWholeFiles(signal);
+          if (!signal?.aborted && 'data' in res.data) {
             this.files = res.data.data;
           }
-        }, 'files.getWholeFiles'),
+        }, 'files.getWholeFiles', requestOptions),
         runFrontendRequestTask(async () => {
-          const res = await shareApi.getShares();
-          if ('data' in res.data) {
+          const res = await shareApi.getShares(undefined, undefined, signal);
+          if (!signal?.aborted && 'data' in res.data) {
             this.shares = res.data.data.map(normalizeShare);
           }
-        }, 'share.getShares'),
+        }, 'share.getShares', requestOptions),
       ]);
     },
     setOneData(type: string, name: string, data: any) {
@@ -367,6 +371,7 @@ export const useSubsStore = defineStore('subsStore', {
         cancelPrevious = !isTargetedFetch,
         missingOnly = false,
         priority = isTargetedFetch ? 100 : 0,
+        signal: parentSignal,
       } = options;
 
       if (cancelPrevious) {
@@ -374,6 +379,12 @@ export const useSubsStore = defineStore('subsStore', {
       }
 
       const abortController = new AbortController();
+      const abortFromParent = () => abortController.abort();
+      if (parentSignal?.aborted) {
+        abortController.abort();
+      } else {
+        parentSignal?.addEventListener('abort', abortFromParent, { once: true });
+      }
       fetchFlowsAbortControllers.add(abortController);
       const { signal } = abortController;
 
@@ -468,6 +479,7 @@ export const useSubsStore = defineStore('subsStore', {
           throw error;
         }
       } finally {
+        parentSignal?.removeEventListener('abort', abortFromParent);
         fetchFlowsAbortControllers.delete(abortController);
       }
   

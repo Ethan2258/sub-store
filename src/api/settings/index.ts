@@ -3,17 +3,19 @@ import { AxiosPromise } from 'axios';
 
 export function useSettingsApi() {
   return {
-    getSettings: (): AxiosPromise<MyAxiosRes> => {
+    getSettings: (signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/settings',
         method: 'get',
+        signal,
       });
     },
-    setSettings: (data: SettingsPostData): AxiosPromise<MyAxiosRes> => {
+    setSettings: (data: SettingsPostData, signal?: AbortSignal): AxiosPromise<MyAxiosRes> => {
       return request({
         url: '/api/settings',
         method: 'patch',
         data,
+        signal,
       });
     },
     syncSettings: (query: 'download' | 'upload', options?: GistBackupSyncOptions): AxiosPromise<MyAxiosRes> => {
