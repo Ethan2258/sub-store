@@ -32,11 +32,13 @@
 
 <script lang="ts" setup>
 import { storeToRefs } from "pinia";
-import { computed } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 
-import LogsPanel from "@/components/LogsPanel.vue";
 import { useLogsOverlayStore } from "@/store/logsOverlay";
 import { useSystemStore } from "@/store/system";
+
+// Only shown once logs are opened, so it is not part of the first download.
+const LogsPanel = defineAsyncComponent(() => import("@/components/LogsPanel.vue"));
 
 const logsOverlayStore = useLogsOverlayStore();
 const systemStore = useSystemStore();

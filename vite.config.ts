@@ -59,12 +59,13 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
         symbolId: "icon-[dir]-[name]",
         customDomId: "__svg__icons__dom__",
       }),
+      // The Sub-Store backend sends `<file>.gz` with Content-Encoding: gzip
+      // when the browser accepts it, so every file worth compressing gets one,
+      // including the small entry script the first page waits for.
       viteCompression({
-        // verbose: true,
-        // disable: false,
-        threshold: 10240,
-        // algorithm: 'gzip',
-        // ext: '.gz'
+        verbose: false,
+        threshold: 1024,
+        compressionOptions: { level: 9 },
       }),
       VitePWA({
         srcDir: "src",

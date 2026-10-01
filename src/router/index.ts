@@ -7,12 +7,11 @@ import { useSubsStore } from '@/store/subs';
 import { useAppNotifyStore } from '@/store/appNotify';
 import { initStores } from '@/utils/initApp';
 import { isDynamicImportFailure, resetPwaCacheAndReload } from '@/utils/pwa';
-import My from '@/views/My.vue';
 import i18n from '@/locales';
 
-import File from '@/views/File.vue';
+// The subscriptions tab is the first page; the other tabs load on demand and
+// are fetched in the background once the app is idle (utils/prefetch.ts).
 import Sub from '@/views/Sub.vue';
-import Sync from '@/views/Sync.vue';
 
 // import editScript from '@/views/editCode/editScript.vue';
 // import themeSetting from '@/views/themeSetting.vue';
@@ -137,7 +136,7 @@ const router = createRouter({
         },
         {
           path: '/sync',
-          component: Sync,
+          component: () => import('@/views/Sync.vue'),
           meta: {
             title: 'sync',
             needTabBar: true,
@@ -148,7 +147,7 @@ const router = createRouter({
         },
         {
           path: '/my',
-          component: My,
+          component: () => import('@/views/My.vue'),
           meta: {
             title: 'my',
             needTabBar: true,
@@ -157,7 +156,7 @@ const router = createRouter({
         },
         {
           path: '/files',
-          component: File,
+          component: () => import('@/views/File.vue'),
           meta: {
             title: 'file',
             needTabBar: true,
