@@ -22,6 +22,7 @@ import { createApp } from 'vue';
 
 import App from './App.vue';
 import { installMotion } from '@/utils/motion';
+import { prefetchTabPages } from '@/utils/prefetch';
 
 export async function initializeApp() {
   try {
@@ -58,4 +59,5 @@ export async function initializeApp() {
   app.component('font-awesome-icon', FontAwesomeIcon);
   app.component('svg-icon', SvgIcon);
   app.mount('#app');
+  prefetchTabPages();
 }
