@@ -105,6 +105,12 @@
     <!-- 页面内容 -->
     <!-- 有数据 -->
     <div class="subs-list-wrapper" :class="{ 'dual-column-mode': isDualColumnMode }">
+      <!-- 首次加载订阅时的占位，样式在 index.html，与启动前的占位一致 -->
+      <div v-if="isLoading && !hasSubs && !hasCollections" class="app-skeleton__list" aria-hidden="true">
+        <div class="app-skeleton__chips"><i></i><i></i></div>
+        <i class="app-skeleton__title"></i>
+        <div v-for="i in 4" :key="i" class="app-skeleton__card"></div>
+      </div>
       <div v-if="tags && tags.length > 0" ref="radioWrapperRef" class="radio-wrapper" >
         <!-- <nut-radiogroup v-model="tag" direction="horizontal"> -->
           <!-- <nut-radio v-for="i in tags" shape="button" :label="String(i.value)">{{ i.label }}</nut-radio> -->

@@ -1,7 +1,7 @@
 import vue from "@vitejs/plugin-vue";
 import * as path from "path";
 import fs from "fs";
-import { ConfigEnv, defineConfig, loadEnv } from "vite";
+import { ConfigEnv, defineConfig, loadEnv, type HtmlTagDescriptor, type Plugin, type Rollup } from "vite";
 import { createStyleImportPlugin } from "vite-plugin-style-import";
 import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
 import viteCompression from "vite-plugin-compression";
@@ -22,11 +22,97 @@ const alias = [
   { find: /^vuedraggable$/, replacement: "vuedraggable/src/vuedraggable.js" },
 ];
 
+// Strips comments and spacing from the inline styles of index.html (the
+// loading placeholder). The backend cannot send its .gz copy when the page is
+// requested as `/`, so this is what most first visits download.
+const minifyInlineStyles = (html: string) =>
+  html.replace(/<style>([\s\S]*?)<\/style>/g, (_, css: string) => {
+    const minified = css
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*([{};:,>])\s*/g, "$1")
+      .replace(/;}/g, "}")
+      .trim();
+    return `<style>${minified}</style>`;
+  });
+
 const htmlPlugin = () => {
   return {
     name: "html-transform",
     transformIndexHtml(html: string) {
-      return html.replace(/__SUB_STORE_FRONT_END_VERSION__/g, version);
+      return minifyInlineStyles(html.replace(/__SUB_STORE_FRONT_END_VERSION__/g, version));
+    },
+  };
+};
+
+// splash.ts starts the app with a dynamic import, so Vite does not list the
+// app's files in index.html and the browser only learns about them after the
+// entry script has downloaded and run. List the app chunk, the chunks it
+// imports and its styles there, so they download alongside the entry script.
+const preloadAppPlugin = (): Plugin => {
+  let base = "/";
+  return {
+    name: "preload-app",
+    apply: "build",
+    configResolved(config) {
+      base = config.base;
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(html, ctx) {
+        const bundle = ctx.bundle;
+        if (!bundle) return html;
+        const app = Object.values(bundle).find(
+          (file): file is Rollup.OutputChunk =>
+            file.type === "chunk" && file.moduleIds.some((id) => id.endsWith("/src/main.ts")),
+        );
+        if (!app) return html;
+
+        const chunks = new Set<string>();
+        const styles = new Set<string>();
+        const visit = (fileName: string) => {
+          const chunk = bundle[fileName];
+          if (chunks.has(fileName) || chunk?.type !== "chunk" || chunk.isEntry) return;
+          chunks.add(fileName);
+          chunk.viteMetadata?.importedCss.forEach((css) => styles.add(css));
+          chunk.imports.forEach(visit);
+        };
+        visit(app.fileName);
+
+        const tags: HtmlTagDescriptor[] = [
+          ...[...chunks].map((file) => ({
+            tag: "link",
+            attrs: { rel: "modulepreload", crossorigin: true, href: base + file },
+            injectTo: "head" as const,
+          })),
+          // Vite adds the stylesheet later with crossorigin; the preload must
+          // match it or the browser downloads the file twice.
+          ...[...styles].map((file) => ({
+            tag: "link",
+            attrs: { rel: "preload", as: "style", crossorigin: true, href: base + file },
+            injectTo: "head" as const,
+          })),
+        ];
+        // The app also waits for the messages of the current language, which
+        // splash.ts only requests once it runs. Start that download here too,
+        // choosing the language as locales/languages.ts does (default zh).
+        const localeFiles: Record<string, string> = {};
+        Object.values(bundle).forEach((file) => {
+          if (file.type !== "chunk") return;
+          const locale = file.moduleIds
+            .map((id) => /\/src\/locales\/(?!index|languages|loaders)(\w+)\.ts$/.exec(id)?.[1])
+            .find(Boolean);
+          if (locale) localeFiles[locale] = base + file.fileName;
+        });
+        if (Object.keys(localeFiles).length > 0) {
+          tags.push({
+            tag: "script",
+            children: `(function(){try{var m=${JSON.stringify(localeFiles)},l=(localStorage.getItem("locale")||navigator.language||"").toLowerCase().split(/[-_]/)[0],h=m[l]||m.zh;if(h){var e=document.createElement("link");e.rel="modulepreload";e.crossOrigin="";e.href=h;document.head.appendChild(e)}}catch(e){}})()`,
+            injectTo: "head",
+          });
+        }
+        return { html, tags };
+      },
     },
   };
 };
@@ -37,6 +123,7 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
   return {
     plugins: [
       htmlPlugin(),
+      preloadAppPlugin(),
       vue(),
       createStyleImportPlugin({
         // resolves: [NutuiResolve()],
@@ -162,6 +249,10 @@ const viteConfig = defineConfig((mode: ConfigEnv) => {
       minify: "terser",
       rollupOptions: {
         output: {
+          // The Sub-Store backend caches files named `-<8 hex digits>.<ext>`
+          // for a year (immutable) and makes the browser revalidate anything
+          // else on every visit. Rollup's default hashes use letters too.
+          hashCharacters: "hex",
           entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: (assetInfo) => {
