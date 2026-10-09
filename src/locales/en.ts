@@ -1461,7 +1461,7 @@ export default {
     subProgress: {
       title: "Subscription Progress Style",
       hidden: "Hidden",
-      background: "Show As Background",
+      background: "Show Usage Bar",
     },
     hideOfficialSiteButton: "Hide subscription official site button",
     moreSettingTitle: "More Setting",

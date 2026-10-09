@@ -86,26 +86,6 @@ html:root {
   }
 }
 
-// Remaining traffic: a thin bar along the bottom edge of the card instead of
-// a tinted block behind the text. Themes without the tokens keep upstream's.
-html:root .sub-item-wrapper > .progress {
-  top: auto;
-  bottom: 0;
-  height: 3px;
-  opacity: 1;
-  border-radius: 0 3px 3px 0;
-  background: var(--sub-progress-fill, var(--primary-color));
-  box-shadow: none;
-}
-
-:root[data-theme="light"] .sub-item-wrapper > .progress {
-  --sub-progress-fill: #15171c59;
-}
-
-:root[data-theme="dark"] .sub-item-wrapper > .progress {
-  --sub-progress-fill: #eef1f566;
-}
-
 // ---------------------------------------------------------------------------
 // Bars and floating surfaces
 
@@ -118,8 +98,8 @@ html:root .sub-item-wrapper > .progress {
 
 .tab-bar-wrapper .tabbar,
 .side-bar-wrapper {
-  backdrop-filter: blur(20px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  backdrop-filter: blur(var(--tab-bar-blur, 16px)) !important;
+  -webkit-backdrop-filter: blur(var(--tab-bar-blur, 16px)) !important;
   border: 1px solid var(--ds-stroke) !important;
   box-shadow: var(--ds-card-shadow) !important;
 }

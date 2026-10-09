@@ -1503,7 +1503,7 @@ export default {
     "subProgress": {
       "title": "Стиль индикатора прогресса подписки",
       "hidden": "Скрытый",
-      "background": "Отображать как фоновую заливку карты"
+      "background": "Показывать полосу расхода"
     },
     "hideOfficialSiteButton": "Скрыть кнопку официального сайта подписки",
     "moreSettingTitle": "Дополнительные настройки",

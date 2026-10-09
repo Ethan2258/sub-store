@@ -13,15 +13,6 @@
       :style="{ padding: itemPadding, '--icon-fit': iconFit }"
       @click="handleContentClick"
     >
-      <div
-        v-if="
-          appearanceSetting.subProgressStyle === 'background' &&
-          typeof flow === 'object' &&
-          flow.progress
-        "
-        class="progress"
-        :style="{ width: `${flow.progress * 100}%` }"
-      ></div>
       <!-- compareSub -->
       <div
         class="sub-img-wrappers"
@@ -191,6 +182,23 @@
               <template v-else-if="typeof flow === 'object'">
                 <span :title="flow.planName">
                   {{ flow.firstLine }}
+                </span>
+                <span
+                  v-if="showFlowMeter"
+                  class="flow-meter"
+                  role="meter"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  :aria-valuenow="flowMeter.percent"
+                  :class="{ 'is-high': flowMeter.percent >= 90 }"
+                >
+                  <span class="flow-meter__track">
+                    <span
+                      class="flow-meter__fill"
+                      :style="{ width: `${flowMeter.width}%` }"
+                    ></span>
+                  </span>
+                  <span class="flow-meter__label">{{ flowMeter.label }}</span>
                 </span>
                 <span :title="flow.planName">{{ flow.secondLine }}</span>
               </template>
@@ -533,6 +541,7 @@ const flow = computed(() => {
       } = target.data;
       if (target.hideExpire) expires = undefined;
       let progress = 0;
+      const used = total > 0 ? (upload + download) / total : NaN;
       try {
         progress = 1 - (upload + download) / total;
         progress = Number.parseFloat(progress.toFixed(2));
@@ -565,6 +574,7 @@ const flow = computed(() => {
           )}`,
           secondLine,
           progress,
+          used,
         };
       } else {
         secondLine = remainingDays
@@ -601,6 +611,7 @@ const flow = computed(() => {
           )}`,
           secondLine,
           progress,
+          used,
         };
       }
     } else if (target?.status === "failed") {
@@ -621,6 +632,31 @@ const flow = computed(() => {
       secondLine: ``,
     };
   }
+});
+
+// Used share of the plan, shown as a small meter under the traffic line when
+// 订阅进度样式 is not hidden.
+const showFlowMeter = computed(
+  () =>
+    appearanceSetting.value.subProgressStyle === "background" &&
+    typeof flow.value === "object" &&
+    Number.isFinite(flow.value?.used),
+);
+
+const flowMeter = computed(() => {
+  const used = typeof flow.value === "object" ? flow.value?.used : NaN;
+  const ratio = Number.isFinite(used) ? Math.min(Math.max(used, 0), 1) : 0;
+  const percent = ratio * 100;
+  const label =
+    percent > 0 && percent < 0.1
+      ? "<0.1%"
+      : `${percent < 10 ? percent.toFixed(1) : Math.round(percent)}%`;
+  return {
+    percent: Math.round(percent * 10) / 10,
+    // Keep a sliver visible once anything is used.
+    width: percent > 0 ? Math.max(percent, 1.5) : 0,
+    label,
+  };
 });
 const simpleSubDetailLine = computed(() => {
   if (props.type !== "sub") {
@@ -1196,16 +1232,49 @@ const refreshSubFlowsIfNeeded = async () => {
       }
     }
   }
-  .progress {
-    opacity: 0.5;
-    z-index: 0;
-    border-radius: var(--item-card-radios);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0%;
-    height: 100%;
-    background: var(--primary-color);
+  .flow-meter {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    max-width: 240px;
+    margin: 4px 0 3px;
+    line-height: 1;
+
+    .flow-meter__track {
+      position: relative;
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      overflow: hidden;
+      background: var(--surface-3, var(--divider-color));
+    }
+
+    .flow-meter__fill {
+      display: block;
+      height: 100%;
+      border-radius: 2px;
+      background: var(--comment-text-color);
+      transition: width 0.4s ease;
+    }
+
+    .flow-meter__label {
+      display: inline !important;
+      flex: none;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--comment-text-color);
+    }
+
+    &.is-high {
+      .flow-meter__fill {
+        background: var(--primary-text-color);
+      }
+
+      .flow-meter__label {
+        color: var(--primary-text-color);
+        font-weight: 600;
+      }
+    }
   }
 }
 
