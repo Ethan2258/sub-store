@@ -427,19 +427,7 @@ function checkNeedConfiguration() {
   position: absolute;
   min-height: 100%;
   width: 100%;
-  background:
-    radial-gradient(ellipse 90% 42% at 8% -10%, rgba(255, 255, 255, 0.7), transparent 58%),
-    radial-gradient(ellipse 70% 36% at 100% 0%, rgba(255, 255, 255, 0.28), transparent 52%),
-    radial-gradient(ellipse 50% 32% at 78% 110%, rgba(0, 0, 0, 0.05), transparent 50%),
-    var(--background-color);
-
-  :root[data-theme="dark"] & {
-    background:
-      radial-gradient(ellipse 80% 36% at 12% -12%, rgba(255, 255, 255, 0.08), transparent 58%),
-      radial-gradient(ellipse 60% 30% at 100% 38%, rgba(255, 255, 255, 0.045), transparent 60%),
-      radial-gradient(ellipse 70% 34% at 0% 92%, rgba(255, 255, 255, 0.04), transparent 60%),
-      #000000;
-  }
+  background: var(--background-color);
   overflow: hidden;
 
   .page-body {
