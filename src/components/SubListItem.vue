@@ -13,6 +13,13 @@
       :style="{ padding: itemPadding, '--icon-fit': iconFit }"
       @click="handleContentClick"
     >
+      <div
+        v-if="showFlowMeter"
+        class="flow-fill"
+        :class="{ 'is-high': flowMeter.percent >= 90 }"
+        :style="{ width: `${flowMeter.width}%` }"
+        aria-hidden="true"
+      ></div>
       <!-- compareSub -->
       <div
         class="sub-img-wrappers"
@@ -181,24 +188,8 @@
               </template>
               <template v-else-if="typeof flow === 'object'">
                 <span :title="flow.planName">
-                  {{ flow.firstLine }}
-                </span>
-                <span
-                  v-if="showFlowMeter"
-                  class="flow-meter"
-                  role="meter"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  :aria-valuenow="flowMeter.percent"
-                  :class="{ 'is-high': flowMeter.percent >= 90 }"
-                >
-                  <span class="flow-meter__track">
-                    <span
-                      class="flow-meter__fill"
-                      :style="{ width: `${flowMeter.width}%` }"
-                    ></span>
-                  </span>
-                  <span class="flow-meter__label">{{ flowMeter.label }}</span>
+                  {{ flow.firstLine
+                  }}<template v-if="showFlowMeter"> · {{ flowMeter.label }}</template>
                 </span>
                 <span :title="flow.planName">{{ flow.secondLine }}</span>
               </template>
@@ -1232,85 +1223,24 @@ const refreshSubFlowsIfNeeded = async () => {
       }
     }
   }
-  .flow-meter {
-    display: flex !important;
-    align-items: center;
-    gap: 8px;
-    max-width: 240px;
-    margin: 4px 0 3px;
-    line-height: 1;
+  // Used share of the plan, painted under the card's content.
+  isolation: isolate;
 
-    .flow-meter__track {
-      position: relative;
-      flex: 1;
-      height: 4px;
-      border-radius: 2px;
-      overflow: hidden;
-      background: var(--surface-3, var(--divider-color));
-    }
-
-    .flow-meter__fill {
-      display: block;
-      height: 100%;
-      border-radius: 2px;
-      background: var(--comment-text-color);
-      transition: width 0.4s ease;
-    }
-
-    .flow-meter__label {
-      display: inline !important;
-      flex: none;
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
-      color: var(--comment-text-color);
-    }
+  .flow-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    max-width: 100%;
+    border-radius: 0;
+    background: var(--flow-fill, rgba(127, 127, 127, 0.1));
+    box-shadow: inset -1px 0 0 var(--flow-edge, rgba(127, 127, 127, 0.3));
+    pointer-events: none;
+    transition: width 0.4s ease;
 
     &.is-high {
-      .flow-meter__fill {
-        background: var(--primary-text-color);
-      }
-
-      .flow-meter__label {
-        color: var(--primary-text-color);
-        font-weight: 600;
-      }
-    }
-  }
-}
-
-.sub-item-swipe.is-dual-column {
-  .sub-item-wrapper {
-    :deep(.nut-avatar) {
-      margin-right: 12px;
-    }
-
-    > .sub-item-content {
-      .sub-item-title-wrapper {
-        align-items: flex-start;
-        gap: 6px;
-      }
-
-      .sub-item-title {
-        font-size: 15px;
-      }
-
-      .sub-item-detail {
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-      }
-
-      .sub-item-remark {
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-      }
-
-      .dual-non-simple-second-line {
-        min-height: 18px;
-      }
-
-      .sub-item-detail-isSimple {
-        max-width: 100%;
-      }
+      background: var(--flow-fill-high, rgba(127, 127, 127, 0.18));
     }
   }
 }

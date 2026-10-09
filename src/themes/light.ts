@@ -52,6 +52,9 @@ export default {
     'focus-ring': '#10141c2e',
     'card-shadow': '0 1px 2px #10141c0a',
     'float-shadow': '0 12px 32px #10141c1f, 0 2px 6px #10141c0f',
+    'flow-fill': '#10141c09',
+    'flow-fill-high': '#10141c12',
+    'flow-edge': '#10141c24',
     // Kept for components that still read the old glass names.
     'glass-stroke': '#10141c0f',
     'glass-highlight': 'transparent',
