@@ -140,15 +140,8 @@ onBeforeUnmount(() => {
   height: 100%;
   box-sizing: border-box;
   border-radius: 999px;
-  background: var(--glass-fill);
-  border: 1px solid var(--glass-stroke);
-  box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 var(--glass-highlight);
-}
-
-:root[data-theme="light"] .tabbar-capsule__glass {
-  background: rgba(0, 0, 0, 0.055);
-  border-color: rgba(255, 255, 255, 0.9);
+  background: var(--surface-2, var(--glass-fill));
+  border: 0;
+  box-shadow: none;
 }
 </style>

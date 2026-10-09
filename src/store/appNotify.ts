@@ -90,6 +90,7 @@ export const useAppNotifyStore = defineStore("appNotify", {
         transition: "slide",
         dangerouslyHTMLString: true,
         closeButton: true,
+        hideProgressBar: true,
         pauseOnHover: true,
         pauseOnFocusLoss: true,
         closeOnClick: false,

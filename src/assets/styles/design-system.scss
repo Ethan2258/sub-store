@@ -1,0 +1,413 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 ZHENG YI HENG
+
+// Black / white / grey design layer for the default light and dark themes.
+//
+// Surfaces are solid and separated by hairlines and a small step in
+// lightness, so cards, rows and controls read clearly without frosted glass.
+// Only bars and sheets that float over content keep a light blur. Colours
+// come from src/themes/{light,dark}.ts; themes without the newer tokens fall
+// back to their own colours.
+
+:root {
+  --ds-surface-2: var(--surface-2, var(--compare-item-background-color));
+  --ds-surface-3: var(--surface-3, var(--divider-color));
+  --ds-stroke: var(--stroke, var(--divider-color));
+  --ds-stroke-strong: var(--stroke-strong, var(--divider-color));
+  --ds-focus: var(--focus-ring, rgba(127, 127, 127, 0.35));
+  --ds-card-shadow: var(--card-shadow, none);
+  --ds-float-shadow: var(--float-shadow, 0 12px 32px rgba(0, 0, 0, 0.18));
+  --ds-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Source Han Sans SC",
+    "Microsoft YaHei", sans-serif;
+}
+
+// Popups, dialogs and toasts are mounted on <body>, outside #app, and used to
+// fall back to the browser's serif font.
+html,
+body {
+  font-family: var(--ds-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--primary-color);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+}
+
+// ---------------------------------------------------------------------------
+// Cards and grouped lists
+
+html:root {
+  .sub-item-wrapper,
+  .nut-cell-group__warp,
+  .nut-collapse-item .collapse-item.collapse-item,
+  .config-card {
+    background-color: var(--card-color);
+    background-image: none;
+    border: 1px solid var(--ds-stroke);
+    box-shadow: var(--ds-card-shadow);
+  }
+
+  .nut-cell-group__title {
+    color: var(--comment-text-color);
+    font-weight: 600;
+  }
+}
+
+// Skip rendering cards scrolled out of view in long lists.
+.sub-item-wrapper {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 67px;
+}
+
+// Rows inside a group are drawn by the group itself: no per-row background,
+// dividers inset on both sides, none under the last row.
+.nut-cell-group__warp .nut-cell {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  &::after {
+    left: 16px !important;
+    right: 16px !important;
+    border-bottom-color: var(--divider-color) !important;
+  }
+
+  &:last-child::after,
+  &:not(:has(~ .nut-cell))::after {
+    display: none !important;
+  }
+}
+
+// Remaining traffic: a thin bar along the bottom edge of the card instead of
+// a tinted block behind the text. Themes without the tokens keep upstream's.
+html:root .sub-item-wrapper > .progress {
+  top: auto;
+  bottom: 0;
+  height: 3px;
+  opacity: 1;
+  border-radius: 0 3px 3px 0;
+  background: var(--sub-progress-fill, var(--primary-color));
+  box-shadow: none;
+}
+
+:root[data-theme="light"] .sub-item-wrapper > .progress {
+  --sub-progress-fill: #15171c59;
+}
+
+:root[data-theme="dark"] .sub-item-wrapper > .progress {
+  --sub-progress-fill: #eef1f566;
+}
+
+// ---------------------------------------------------------------------------
+// Bars and floating surfaces
+
+.nut-navbar,
+.editor-section-tabs {
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  box-shadow: 0 1px 0 var(--ds-stroke) !important;
+}
+
+.tab-bar-wrapper .tabbar,
+.side-bar-wrapper {
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border: 1px solid var(--ds-stroke) !important;
+  box-shadow: var(--ds-card-shadow) !important;
+}
+
+.tab-bar-wrapper .tabbar {
+  border-width: 1px 0 0 !important;
+}
+
+.nut-popup.nut-popup,
+.auto-dialog,
+.tab-panel-wrapper {
+  background-image: none;
+  border: 1px solid var(--ds-stroke);
+  box-shadow: var(--ds-float-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.nut-popup.nut-popup.nut-popup--bottom {
+  border-width: 1px 0 0;
+}
+
+.nut-overlay {
+  background-color: rgba(8, 10, 14, 0.45) !important;
+}
+
+:root[data-theme="dark"] .nut-overlay {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+// The active tab sits on a soft pill (TabBarCapsule.vue); tabs are
+// positioned so their icons draw above it.
+.tab-bar-wrapper .nut-tabbar-item {
+  position: relative;
+
+  > .nut-tabbar-item_icon-box {
+    position: relative;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Buttons
+
+html:root {
+  .nut-button.nut-button--primary:not(.nut-button--plain) {
+    color: var(--button-text-color);
+    background: var(--primary-color);
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .nut-button.nut-button--primary:not(.nut-button--plain):active {
+    opacity: 0.85;
+  }
+
+  // Secondary buttons: a filled neutral surface instead of an outline.
+  .nut-button.nut-button--plain {
+    color: var(--primary-text-color) !important;
+    background: var(--ds-surface-2) !important;
+    border: 1px solid var(--ds-stroke) !important;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    svg {
+      color: inherit !important;
+    }
+  }
+
+  .nut-button.nut-button--default:not(.nut-button--plain),
+  .nut-button.nut-button--success:not(.nut-button--plain),
+  .nut-button.nut-button--danger:not(.nut-button--plain),
+  .nut-button.nut-button--warning:not(.nut-button--plain),
+  .nut-button.nut-button--info:not(.nut-button--plain) {
+    color: var(--button-text-color);
+    background: var(--primary-color);
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.drag-btn > svg {
+  color: var(--button-text-color, #fff) !important;
+}
+
+.archive-type-selection-toggle.active,
+.link-type-selection-toggle.active {
+  color: var(--button-text-color, #fff) !important;
+}
+
+// ---------------------------------------------------------------------------
+// Choice controls
+
+// Button-shaped radios (来源, 合并来源, ...): the chosen option is filled,
+// the others are quiet. Upstream drew the chosen one as an outline and the
+// others filled, which read the wrong way round.
+html:root .nut-radio .nut-radio__button {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--ds-surface-2);
+  color: var(--comment-text-color);
+  font-weight: 500;
+  transition: background-color 0.18s ease, color 0.18s ease;
+
+  &.false {
+    border-color: transparent;
+    background: var(--ds-surface-2);
+    color: var(--comment-text-color);
+  }
+
+  &:not(.false) {
+    border-color: transparent;
+    background: var(--primary-color);
+    color: var(--button-text-color);
+  }
+}
+
+html:root .nut-radio--disabled .nut-radio__button {
+  opacity: 0.45;
+}
+
+// Switch: filled track when on, knob in the card colour so it stays visible.
+html:root {
+  .nut-switch {
+    box-shadow: none;
+  }
+
+  .nut-switch.switch-close {
+    background: var(--switch-close-background-color) !important;
+    border-color: transparent !important;
+  }
+
+  .nut-switch.switch-open .switch-button {
+    background: var(--card-color);
+  }
+
+  .nut-switch.switch-close .switch-button {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.nut-tag.nut-tag--primary.nut-tag--plain {
+  color: var(--comment-text-color);
+  border-color: transparent;
+  background: var(--ds-surface-2);
+}
+
+// ---------------------------------------------------------------------------
+// Inputs
+
+html:root {
+  .nut-input,
+  .nut-textarea,
+  .nut-textarea__textarea {
+    background: transparent !important;
+  }
+
+  .nut-input .input-text,
+  .nut-textarea__textarea {
+    color: var(--primary-text-color) !important;
+    -webkit-text-fill-color: var(--primary-text-color);
+  }
+
+  input::placeholder,
+  textarea::placeholder,
+  .input-text::placeholder,
+  .nut-input__placeholder {
+    color: var(--lowest-text-color) !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: var(--lowest-text-color);
+  }
+
+  .nut-searchbar,
+  .nut-searchbar__search-input {
+    background: var(--ds-surface-2) !important;
+    color: var(--primary-text-color) !important;
+    border-radius: 10px;
+  }
+
+  .nut-popover-content,
+  .nut-pagination-prev,
+  .nut-pagination-item,
+  .nut-pagination-next {
+    background: var(--popup-color) !important;
+    color: var(--primary-text-color) !important;
+    border-color: var(--ds-stroke) !important;
+  }
+
+  .nut-popover-content {
+    box-shadow: var(--ds-float-shadow) !important;
+  }
+
+  .nut-pagination .active {
+    background: var(--primary-color) !important;
+    color: var(--button-text-color) !important;
+    -webkit-text-fill-color: var(--button-text-color);
+  }
+
+  .nut-form-item__label,
+  .nut-cell__title,
+  .nut-radio__label,
+  .nut-checkbox__label,
+  .nut-popover-menu-item {
+    color: var(--primary-text-color) !important;
+    -webkit-text-fill-color: var(--primary-text-color);
+  }
+
+  .nut-cell__value {
+    color: var(--comment-text-color);
+  }
+}
+
+:root[data-theme="dark"] {
+  .tab-bar-wrapper .nut-tabbar-item__icon--unactive {
+    color: var(--lowest-text-color) !important;
+  }
+
+  .nut-icon-right::before,
+  .nut-icon-rect-right::before {
+    color: var(--comment-text-color);
+  }
+
+  .navBar-right-button:disabled,
+  .is-disabled,
+  .is-inactive {
+    opacity: 0.6 !important;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Notifications: a compact raised card, no countdown bar.
+
+.Toastify__toast.Toastify__toast-theme--colored {
+  min-height: 0;
+  margin: 8px 12px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: var(--primary-text-color);
+  background: var(--popup-color);
+  border: 1px solid var(--ds-stroke-strong);
+  box-shadow: var(--ds-float-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  font-family: var(--ds-font);
+  font-size: 14px;
+  line-height: 1.45;
+
+  strong {
+    font-weight: 600;
+  }
+
+  .Toastify__toast-icon {
+    width: 18px;
+    margin-inline-end: 10px;
+  }
+
+  .Toastify__toast-icon svg {
+    fill: currentColor;
+  }
+
+  &.Toastify__toast--error .Toastify__toast-icon,
+  &.Toastify__toast--warning .Toastify__toast-icon {
+    color: var(--primary-text-color);
+  }
+
+  &.Toastify__toast--info .Toastify__toast-icon,
+  &.Toastify__toast--success .Toastify__toast-icon,
+  &.Toastify__toast--default .Toastify__toast-icon {
+    color: var(--comment-text-color);
+  }
+
+  .Toastify__toast-body {
+    margin: 0;
+    padding: 0;
+    align-items: center;
+  }
+
+  .Toastify__close-button {
+    position: static;
+    align-self: center;
+    margin-inline-start: 8px;
+    color: var(--comment-text-color);
+    opacity: 1;
+  }
+}
+
+.Toastify__progress-bar,
+.Toastify__progress-bar--bg {
+  display: none !important;
+}
