@@ -23,7 +23,7 @@ export default {
     'status-bar-background-color': '#f2f3f6',
     'background-color': '#f2f3f6',
     'nav-bar-color': '#f2f3f6d9',
-    'tab-bar-color': '#ffffffe0',
+    'tab-bar-color': '#ffffffb3',
     'popup-color': '#ffffff',
     'divider-color': '#10141c14',
     'card-color': '#ffffff',
@@ -41,7 +41,7 @@ export default {
 
     'img-brightness': '0',
     'nav-bar-blur': '20px',
-    'tab-bar-blur': '20px',
+    'tab-bar-blur': '16px',
     'sticky-title-blur': '20px',
 
     // Design tokens used by design-system.scss.
@@ -49,9 +49,12 @@ export default {
     'surface-3': '#e3e6ec',
     'stroke': '#10141c0f',
     'stroke-strong': '#10141c1f',
-    'focus-ring': '#4c6fbf40',
+    'focus-ring': '#10141c2e',
     'card-shadow': '0 1px 2px #10141c0a',
     'float-shadow': '0 12px 32px #10141c1f, 0 2px 6px #10141c0f',
+    'flow-fill': '#10141c09',
+    'flow-fill-high': '#10141c12',
+    'flow-edge': '#10141c24',
     // Kept for components that still read the old glass names.
     'glass-stroke': '#10141c0f',
     'glass-highlight': 'transparent',

@@ -251,8 +251,8 @@ const PAGE_HEADERS = {
 // Same black / white / grey liquid glass as the Sub-Store front end
 // (Ethan2258/sub-store src/themes/*.ts, liquid-glass.scss, App.vue).
 const PAGE_CSS = `
-:root{color-scheme:light;--bg:#f2f3f6;--text:#111318;--text-2:#2b2f37;--muted:#5b6270;--placeholder:#6b7280;--glass-stroke:#10141c14;--glass-highlight:transparent;--glass-fill:#eef0f4;--glass-sheen:transparent;--card:#ffffff;--group:#f5f6f8;--divider:#10141c14;--btn-from:#15171c;--btn-to:#15171c;--btn-text:#fff;--ring:#4c6fbf40;--shadow:0 1px 2px #10141c0a,0 12px 32px #10141c0f;--orb-1:transparent;--orb-2:transparent;--orb-3:transparent;--glow:none;--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","PingFang SC","Noto Sans SC","Source Han Sans SC",sans-serif}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0b0c0e;--text:#f3f5f8;--text-2:#d9dde4;--muted:#a3a9b4;--placeholder:#8a909b;--glass-stroke:#ffffff12;--glass-highlight:transparent;--glass-fill:#1f2228;--glass-sheen:transparent;--card:#16181c;--group:#1f2228;--divider:#ffffff12;--btn-from:#eef1f5;--btn-to:#eef1f5;--btn-text:#0b0c0e;--ring:#8fb0ff52;--shadow:0 16px 40px #00000066;--orb-1:transparent;--orb-2:transparent;--orb-3:transparent;--glow:none}}
+:root{color-scheme:light;--bg:#f2f3f6;--text:#111318;--text-2:#2b2f37;--muted:#5b6270;--placeholder:#6b7280;--glass-stroke:#10141c14;--glass-highlight:transparent;--glass-fill:#eef0f4;--glass-sheen:transparent;--card:#ffffff;--group:#f5f6f8;--divider:#10141c14;--btn-from:#15171c;--btn-to:#15171c;--btn-text:#fff;--ring:#10141c1f;--shadow:0 1px 2px #10141c0a,0 12px 32px #10141c0f;--orb-1:transparent;--orb-2:transparent;--orb-3:transparent;--glow:none;--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","PingFang SC","Noto Sans SC","Source Han Sans SC",sans-serif}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0b0c0e;--text:#f3f5f8;--text-2:#d9dde4;--muted:#a3a9b4;--placeholder:#8a909b;--glass-stroke:#ffffff12;--glass-highlight:transparent;--glass-fill:#1f2228;--glass-sheen:transparent;--card:#16181c;--group:#1f2228;--divider:#ffffff12;--btn-from:#eef1f5;--btn-to:#eef1f5;--btn-text:#0b0c0e;--ring:#ffffff24;--shadow:0 16px 40px #00000066;--orb-1:transparent;--orb-2:transparent;--orb-3:transparent;--glow:none}}
 *{box-sizing:border-box}
 html{height:100%;background:var(--bg)}
 body{margin:0;min-height:100%;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));background:var(--glow),var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
@@ -273,7 +273,8 @@ h1{margin:18px 0 0;font-size:26px;line-height:1.15;font-weight:700;letter-spacin
 .field span{flex:0 0 auto;min-width:3.2em;font-size:16px;color:var(--text-2)}
 input{flex:1;width:100%;min-width:0;height:52px;margin:0;padding:0 44px 0 0;border:0;outline:none;border-radius:0;background:transparent;color:var(--text);font:inherit;font-size:17px;-webkit-appearance:none;appearance:none}
 input::placeholder{color:var(--placeholder)}
-input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(--text);caret-color:var(--text);transition:background-color 99999s ease 0s}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,input:autofill{-webkit-text-fill-color:var(--text);caret-color:var(--text);-webkit-box-shadow:0 0 0 1000px var(--group) inset;box-shadow:0 0 0 1000px var(--group) inset;background-color:var(--group)!important;transition:background-color 99999s ease 0s}
+input::selection{background:var(--ring)}
 .btn{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:52px;margin:0;padding:0 20px;border-radius:999px;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em;text-decoration:none;cursor:pointer;-webkit-appearance:none;appearance:none;transition:transform .18s ease,opacity .18s ease,box-shadow .18s ease}
 .btn:active:not(:disabled){transform:scale(.98);opacity:.84}
 .btn:disabled{cursor:default}
@@ -392,7 +393,8 @@ function options(autofill){var p=queue.then(function(){return post('/_auth/passk
 form.addEventListener('submit',async function(ev){
   ev.preventDefault();
   if(busy)return;
-  if(!pass.value){fail('请输入密码');pass.focus();return}
+  // Autofill can submit before the password arrives; just wait for it.
+  if(!pass.value){say('');pass.focus();return}
   lock(true);setState(submitBtn,'loading');say('');
   try{
     var d=await post('/_auth/login',{username:user.value,password:pass.value,return:ret});

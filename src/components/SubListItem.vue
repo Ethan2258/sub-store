@@ -14,13 +14,11 @@
       @click="handleContentClick"
     >
       <div
-        v-if="
-          appearanceSetting.subProgressStyle === 'background' &&
-          typeof flow === 'object' &&
-          flow.progress
-        "
-        class="progress"
-        :style="{ width: `${flow.progress * 100}%` }"
+        v-if="showFlowMeter"
+        class="flow-fill"
+        :class="{ 'is-high': flowMeter.percent >= 90 }"
+        :style="{ width: `${flowMeter.width}%` }"
+        aria-hidden="true"
       ></div>
       <!-- compareSub -->
       <div
@@ -190,7 +188,8 @@
               </template>
               <template v-else-if="typeof flow === 'object'">
                 <span :title="flow.planName">
-                  {{ flow.firstLine }}
+                  {{ flow.firstLine
+                  }}<template v-if="showFlowMeter"> · {{ flowMeter.label }}</template>
                 </span>
                 <span :title="flow.planName">{{ flow.secondLine }}</span>
               </template>
@@ -533,6 +532,7 @@ const flow = computed(() => {
       } = target.data;
       if (target.hideExpire) expires = undefined;
       let progress = 0;
+      const used = total > 0 ? (upload + download) / total : NaN;
       try {
         progress = 1 - (upload + download) / total;
         progress = Number.parseFloat(progress.toFixed(2));
@@ -565,6 +565,7 @@ const flow = computed(() => {
           )}`,
           secondLine,
           progress,
+          used,
         };
       } else {
         secondLine = remainingDays
@@ -601,6 +602,7 @@ const flow = computed(() => {
           )}`,
           secondLine,
           progress,
+          used,
         };
       }
     } else if (target?.status === "failed") {
@@ -621,6 +623,31 @@ const flow = computed(() => {
       secondLine: ``,
     };
   }
+});
+
+// Used share of the plan, shown as a small meter under the traffic line when
+// 订阅进度样式 is not hidden.
+const showFlowMeter = computed(
+  () =>
+    appearanceSetting.value.subProgressStyle === "background" &&
+    typeof flow.value === "object" &&
+    Number.isFinite(flow.value?.used),
+);
+
+const flowMeter = computed(() => {
+  const used = typeof flow.value === "object" ? flow.value?.used : NaN;
+  const ratio = Number.isFinite(used) ? Math.min(Math.max(used, 0), 1) : 0;
+  const percent = ratio * 100;
+  const label =
+    percent > 0 && percent < 0.1
+      ? "<0.1%"
+      : `${percent < 10 ? percent.toFixed(1) : Math.round(percent)}%`;
+  return {
+    percent: Math.round(percent * 10) / 10,
+    // Keep a sliver visible once anything is used.
+    width: percent > 0 ? Math.max(percent, 1.5) : 0,
+    label,
+  };
 });
 const simpleSubDetailLine = computed(() => {
   if (props.type !== "sub") {
@@ -1196,52 +1223,24 @@ const refreshSubFlowsIfNeeded = async () => {
       }
     }
   }
-  .progress {
-    opacity: 0.5;
-    z-index: 0;
-    border-radius: var(--item-card-radios);
+  // Used share of the plan, painted under the card's content.
+  isolation: isolate;
+
+  .flow-fill {
     position: absolute;
     top: 0;
+    bottom: 0;
     left: 0;
-    width: 0%;
-    height: 100%;
-    background: var(--primary-color);
-  }
-}
+    z-index: -1;
+    max-width: 100%;
+    border-radius: 0;
+    background: var(--flow-fill, rgba(127, 127, 127, 0.1));
+    box-shadow: inset -1px 0 0 var(--flow-edge, rgba(127, 127, 127, 0.3));
+    pointer-events: none;
+    transition: width 0.4s ease;
 
-.sub-item-swipe.is-dual-column {
-  .sub-item-wrapper {
-    :deep(.nut-avatar) {
-      margin-right: 12px;
-    }
-
-    > .sub-item-content {
-      .sub-item-title-wrapper {
-        align-items: flex-start;
-        gap: 6px;
-      }
-
-      .sub-item-title {
-        font-size: 15px;
-      }
-
-      .sub-item-detail {
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-      }
-
-      .sub-item-remark {
-        -webkit-line-clamp: 1;
-        line-clamp: 1;
-      }
-
-      .dual-non-simple-second-line {
-        min-height: 18px;
-      }
-
-      .sub-item-detail-isSimple {
-        max-width: 100%;
-      }
+    &.is-high {
+      background: var(--flow-fill-high, rgba(127, 127, 127, 0.18));
     }
   }
 }

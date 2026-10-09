@@ -1414,7 +1414,7 @@ export default {
     subProgress: {
       title: '订阅进度样式',
       hidden: '不显示',
-      background: '显示为背景',
+      background: '显示用量条',
     },
     hideOfficialSiteButton: '隐藏订阅官网按钮',
     moreSettingTitle: '更多设置',
