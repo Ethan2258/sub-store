@@ -14,7 +14,7 @@
       @click="handleContentClick"
     >
       <div
-        v-if="showFlowMeter"
+        v-if="showFlowMeter && flowMeter.percent >= 3"
         class="flow-fill"
         :class="{ 'is-high': flowMeter.percent >= 90 }"
         :style="{ width: `${flowMeter.width}%` }"
@@ -644,8 +644,7 @@ const flowMeter = computed(() => {
       : `${percent < 10 ? percent.toFixed(1) : Math.round(percent)}%`;
   return {
     percent: Math.round(percent * 10) / 10,
-    // Keep a sliver visible once anything is used.
-    width: percent > 0 ? Math.max(percent, 1.5) : 0,
+    width: percent,
     label,
   };
 });
@@ -1234,13 +1233,21 @@ const refreshSubFlowsIfNeeded = async () => {
     z-index: -1;
     max-width: 100%;
     border-radius: 0;
-    background: var(--flow-fill, rgba(127, 127, 127, 0.1));
-    box-shadow: inset -1px 0 0 var(--flow-edge, rgba(127, 127, 127, 0.3));
+    // Fades out over the last few pixels instead of ending in a hard line.
+    background: linear-gradient(
+      90deg,
+      var(--flow-fill, rgba(127, 127, 127, 0.1)) calc(100% - 14px),
+      transparent
+    );
     pointer-events: none;
     transition: width 0.4s ease;
 
     &.is-high {
-      background: var(--flow-fill-high, rgba(127, 127, 127, 0.18));
+      background: linear-gradient(
+        90deg,
+        var(--flow-fill-high, rgba(127, 127, 127, 0.18)) calc(100% - 14px),
+        transparent
+      );
     }
   }
 }
