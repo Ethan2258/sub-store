@@ -205,17 +205,68 @@ html:root .nut-button.nut-button--disabled {
 // ---------------------------------------------------------------------------
 // Tabs: group filters on list pages and section tabs in editors were 12px.
 
+// Component styles are scoped and more specific, hence !important.
 html:root {
   .radio-wrapper .tag,
   .editor-section-tabs .editor-section-tab {
-    font-size: 14px;
-    color: var(--comment-text-color);
+    font-size: 14px !important;
+    color: var(--comment-text-color) !important;
   }
 
   .radio-wrapper .tag.current,
   .editor-section-tabs .editor-section-tab.current {
-    color: var(--primary-text-color);
+    color: var(--primary-text-color) !important;
     font-weight: 600;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legibility on 1x desktop screens, where 11-12px grey text blurs.
+
+html:root {
+  .sub-item-detail,
+  .sub-item-detail span,
+  .sub-item-detail-isSimple,
+  .sub-item-remark,
+  .sub-item-remark span {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+  }
+
+  .sub-item-title .nut-tag {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--comment-text-color) !important;
+    background: var(--ds-surface-2) !important;
+    border-color: transparent !important;
+  }
+
+  .list-title {
+    color: var(--second-text-color) !important;
+    font-weight: 600;
+  }
+
+  .side-bar-wrapper .menu-item {
+    box-sizing: border-box;
+    width: auto !important;
+    margin: 0 8px;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    border-radius: 10px;
+  }
+
+  .side-bar-wrapper .menu-item:not(.active):not(:hover) {
+    color: var(--comment-text-color);
+  }
+
+  .side-bar-wrapper .menu-item.active {
+    color: var(--primary-text-color);
+    background: var(--ds-surface-2);
+    border-radius: 10px;
+
+    .label {
+      font-weight: 600;
+    }
   }
 }
 
