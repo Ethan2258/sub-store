@@ -83,6 +83,8 @@ interface Artifacts {
 
 interface Flow {
   status: 'success' | 'noFlow';
+  // Restored from the local cache and not refreshed yet.
+  cached?: boolean;
   showRemaining?: boolean;
   hideExpire?: boolean;
   data: {

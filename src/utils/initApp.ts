@@ -27,6 +27,7 @@ export const initStores = async (
 
   const { t } = i18n.global;
   let isSucceed = true;
+  let flowsPromise: Promise<void> | undefined;
   if (needRefreshCache) {
     showNotify({ title: t("globalNotify.refresh.loading"), type: "primary" });
   }
@@ -36,6 +37,10 @@ export const initStores = async (
   try {
     try {
       localStorage.removeItem("envCache");
+
+      // Lists don't depend on the env check; start them together so the
+      // page waits for one round trip instead of several in a row.
+      const subsPromise = subsStore.fetchSubsData({ signal });
 
       const configuredTimeout = Number(localStorage.getItem("timeout"));
       const timeoutMs = Number.isFinite(configuredTimeout) && configuredTimeout > 0
@@ -70,13 +75,19 @@ export const initStores = async (
         throw new Error("Failed to get backend environment info");
       }
 
-      await subsStore.fetchSubsData({ signal });
+      await subsPromise;
       if (!isCurrent()) return;
-      await new Promise(resolve => setTimeout(resolve, 50));
-      if (!isCurrent()) return;
-      await artifactsStore.fetchArtifactsData(signal);
-      if (!isCurrent()) return;
-      await settingsStore.fetchSettings(signal);
+      // Traffic only needs the subscription list, so it no longer waits for
+      // sync configs and settings (the backend takes ~0.4s on settings).
+      if (needFetchFlow) {
+        flowsPromise = subsStore.fetchFlows(undefined, { signal }).catch((error) => {
+          if (!signal.aborted) console.error("Error fetching flows:", error);
+        });
+      }
+      await Promise.all([
+        artifactsStore.fetchArtifactsData(signal),
+        settingsStore.fetchSettings(signal),
+      ]);
       if (!isCurrent()) return;
       await settingsStore.syncLocalAppearanceSetting({ signal });
       if (!isCurrent()) return;
@@ -105,7 +116,7 @@ export const initStores = async (
     globalStore.setLoading(false);
 
     if (needFetchFlow) {
-      await subsStore.fetchFlows(undefined, { signal });
+      await (flowsPromise ?? subsStore.fetchFlows(undefined, { signal }));
     }
   } finally {
     if (activeInitialization === controller) {

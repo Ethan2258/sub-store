@@ -21,6 +21,36 @@ let flowRequestSequence = 0;
 
 const canFetchFlowsForCurrentPage = () => window.location.pathname === '/subs';
 
+// Last known traffic per subscription, so the list can show it right away
+// and refresh it in the background. Keyed by subscription name and holding
+// only the usage figures: no URLs (they carry tokens) and no node content.
+const FLOW_CACHE_KEY = 'subFlowCache:v1';
+const FLOW_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+type CachedFlow = { at: number; data: any };
+
+const readFlowCache = (): Record<string, CachedFlow> => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FLOW_CACHE_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeFlowCache = (name: string, data: any) => {
+  try {
+    const cache = readFlowCache();
+    if (data) {
+      cache[name] = { at: Date.now(), data };
+    } else {
+      delete cache[name];
+    }
+    localStorage.setItem(FLOW_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Storage may be full or disabled; the cache is only a convenience.
+  }
+};
+
 const createFlowRequestState = (flowKey: string, parentSignal: AbortSignal) => {
   fetchFlowAbortControllers.get(flowKey)?.abort();
 
@@ -293,6 +323,7 @@ export const useSubsStore = defineStore('subsStore', {
               }
               return i
             });
+            this.restoreCachedFlows();
           }
         }, 'subs.getSubs', requestOptions),
         runFrontendRequestTask(async () => {
@@ -343,6 +374,16 @@ export const useSubsStore = defineStore('subsStore', {
       } catch (error) {
         console.log('updateOneData error', error);
       }
+    },
+    // Show the last known traffic until fresh numbers arrive.
+    restoreCachedFlows() {
+      const cache = readFlowCache();
+      const now = Date.now();
+      getFlowsUrlList(this.subs).forEach(([url, name, noFlow, hideExpire, showRemaining]) => {
+        const cached = cache[name];
+        if (noFlow || url in this.flows || !cached || now - cached.at > FLOW_CACHE_MAX_AGE) return;
+        this.flows[url] = { ...cached.data, hideExpire, showRemaining, cached: true };
+      });
     },
     cancelFetchFlows() {
       if (
@@ -414,6 +455,12 @@ export const useSubsStore = defineStore('subsStore', {
             const data = res?.data;
             if (data) {
               this.flows[url] = {...data, hideExpire, showRemaining };
+              writeFlowCache(
+                name,
+                data.status === 'success' && data.data?.usage
+                  ? { status: data.status, data: data.data }
+                  : undefined,
+              );
             }
           }
         } catch (e) {
@@ -429,7 +476,7 @@ export const useSubsStore = defineStore('subsStore', {
       // getFlowsUrlList(subs).forEach(asyncGetFlow);
       // 多次反复开启 容易爆内存 尝试分批请求 3/100ms
       const flowsUrlList = (getFlowsUrlList(sub || this.subs) as FlowUrlItem[])
-        .filter(([url]) => !missingOnly || !(url in this.flows));
+        .filter(([url]) => !missingOnly || !(url in this.flows) || (this.flows[url] as Flow | undefined)?.cached);
       // const processor = new TaskProcessor();
       // await processor.runTasks({
       //   tasks: flowsUrlList.map((item, index) => async() => {
