@@ -36,8 +36,8 @@ export default {
 
     'primary-text-color': '#111318',
     'second-text-color': '#2b2f37',
-    'comment-text-color': '#5b6270',
-    'lowest-text-color': '#6b7280',
+    'comment-text-color': '#4b5260',
+    'lowest-text-color': '#5f6673',
 
     'img-brightness': '0',
     'nav-bar-blur': '20px',
