@@ -190,6 +190,35 @@ html:root {
   color: var(--button-text-color, #fff) !important;
 }
 
+// Disabled buttons keep their colours and fade, instead of NutUI's grey fill.
+html:root .nut-button.nut-button--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+
+  &.nut-button--primary:not(.nut-button--plain) {
+    color: var(--button-text-color);
+    background: var(--primary-color);
+    border-color: transparent;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tabs: group filters on list pages and section tabs in editors were 12px.
+
+html:root {
+  .radio-wrapper .tag,
+  .editor-section-tabs .editor-section-tab {
+    font-size: 14px;
+    color: var(--comment-text-color);
+  }
+
+  .radio-wrapper .tag.current,
+  .editor-section-tabs .editor-section-tab.current {
+    color: var(--primary-text-color);
+    font-weight: 600;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Choice controls
 

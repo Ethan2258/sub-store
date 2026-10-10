@@ -1233,21 +1233,12 @@ const refreshSubFlowsIfNeeded = async () => {
     z-index: -1;
     max-width: 100%;
     border-radius: 0;
-    // Fades out over the last few pixels instead of ending in a hard line.
-    background: linear-gradient(
-      90deg,
-      var(--flow-fill, rgba(127, 127, 127, 0.1)) calc(100% - 14px),
-      transparent
-    );
+    background: var(--flow-fill, rgba(127, 127, 127, 0.1));
     pointer-events: none;
     transition: width 0.4s ease;
 
     &.is-high {
-      background: linear-gradient(
-        90deg,
-        var(--flow-fill-high, rgba(127, 127, 127, 0.18)) calc(100% - 14px),
-        transparent
-      );
+      background: var(--flow-fill-high, rgba(127, 127, 127, 0.18));
     }
   }
 }

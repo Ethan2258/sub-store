@@ -83,6 +83,9 @@ export const useAppNotifyStore = defineStore("appNotify", {
         danger: "ERROR",
         warning: "WARNING",
       };
+      // One message at a time: a newer one (e.g. 刷新完成) replaces the
+      // previous one (刷新数据中…) instead of stacking under it.
+      toast.clearAll(undefined, true);
       toast(html, {
         theme: "colored",
         type: toast.TYPE[types[notifyType] || "DEFAULT"],
