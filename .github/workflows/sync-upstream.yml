@@ -137,7 +137,8 @@ jobs:
           HAS_SYNC_TOKEN: ${{ secrets.SYNC_TOKEN != '' }}
         run: |
           if [[ "$HAS_SYNC_TOKEN" == false ]]; then
-            gh workflow run main.yml --ref master
+            # 检出里有 upstream 远端，gh 会优先把它当成目标仓库（2026-10 三次同步因此 403、没发布），必须写明 --repo。
+            gh workflow run main.yml --ref master --repo "$GITHUB_REPOSITORY"
           fi
 
       - name: Open pull request from upstream
