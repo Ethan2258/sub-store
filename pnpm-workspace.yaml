@@ -19,3 +19,9 @@ overrides:
   'postcss@>=8.0.0 <8.5.28': ^8.5.28
   'nanoid@>=3.0.0 <3.3.19': ^3.3.19
   'immutable@>=5.0.0 <5.1.8': ^5.1.8
+  # Patched versions for the remaining audit findings (2026-11): the Vue
+  # packages (server renderer XSS; the app never renders on the server),
+  # follow-redirects (Node adapter only) and source-map-js (build only).
+  'vue@<3.5.42': ^3.5.42
+  'follow-redirects@<1.16.2': ^1.16.2
+  'source-map-js@<1.2.2': ^1.2.2
